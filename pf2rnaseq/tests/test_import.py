@@ -7,7 +7,7 @@ import numpy as np
 from ..imports import (
     import_citeseq,
     import_HTAN,
-    import_CCLE,
+    import_CCLE
 )
 
 

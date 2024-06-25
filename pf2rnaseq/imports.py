@@ -2,12 +2,10 @@ import glob
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
-import pandas as pd
 import anndata
 import scanpy as sc
 from scipy.sparse import spmatrix, csr_matrix
 from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
-from .gating import gateThomsonCells
 
 
 def prepare_dataset(

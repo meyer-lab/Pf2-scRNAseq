@@ -4,13 +4,13 @@ Test the parafac2 method.
 
 import numpy as np
 from ..factorization import pf2, pf2_pca_r2x
-from ..imports import import_thomson
+from ..imports import import_HTAN
 
 
 def test_factor_thomson():
     """Import and factor Thomson.
     This also checks that the factorization process is reproducible."""
-    X = import_thomson()
+    X = import_HTAN()
 
     X = pf2(X, 10, doEmbedding=False)
     C_first = np.array(X.varm["Pf2_C"], copy=True)

@@ -2,6 +2,7 @@
 Cytokines: Plotting Cytokine factors and weights
 """
 
+import pandas as pd
 from .common import subplotLabel, getSetup
 from .commonFuncs.plotFactors import (
     plot_condition_factors,
@@ -9,10 +10,17 @@ from .commonFuncs.plotFactors import (
     plot_gene_factors,
     plot_factor_weight,
 )
-from .commonFuncs.plotLupus import samples_only_lupus
 from ..factorization import correct_conditions
 from ..imports import import_cytokine
 from ..factorization import pf2
+
+
+def samples_only(X) -> pd.DataFrame:
+    """Obtain samples once only with corresponding observations"""
+    samples = X.obs
+    df_samples = samples.drop_duplicates(subset="condition_unique_idxs")
+    df_samples = df_samples.sort_values("condition_unique_idxs")
+    return df_samples
 
 
 def makeFigure():
@@ -27,7 +35,7 @@ def makeFigure():
     X = pf2(X, 50, tolerance=1e-6)
 
     X.uns["Pf2_A"] = correct_conditions(X)
-    stimulations = samples_only_lupus(X)["Condition"]
+    stimulations = samples_only(X)["Condition"]
 
     plot_condition_factors(X, ax[0], stimulations, groupConditions=True)
     ax[0].set(yticks=[])
