@@ -15,7 +15,7 @@ from .commonFuncs.plotFactors import (
 )
 from .commonFuncs.plotPaCMAP import plot_labels_pacmap
 import numpy as np
-
+import pandas as pd
 
 def makeFigure():
     """Get a list of the axis objects and create a figure."""
@@ -26,20 +26,42 @@ def makeFigure():
     subplotLabel(ax)
 
     X = read_h5ad("/opt/andrew/lupus/lupus_fitted_ann.h5ad")
+    bulk_matrix, bulk_tensor = pseudobulk_lupus(X)
     
-    
-    # bulk_de_genes_up_list = bulk_de_genes['Gene'].tolist()
-    # # Subset the data based on the list of genes
-    # adata2 = adata[:, adata.var_names.isin(bulk_de_genes_up_list)]
-    # average_expression = adata2.X.mean(axis=1)
-    # adata2.obs['bulk_de_gene_average'] = average_expression
-    # sc.pl.umap(adata2, color='bulk_de_gene_average', cmap='viridis')
-        
-    
+    print(bulk_matrix)
 
-  
+    
+        
+
 
     return f
+
+def pseudobulk_lupus(X, cellType="Cell Type"):
+    """Average gene expression for each condition and cell type; 
+    creates matrix and tensor version"""
+    X_df = X.to_df()
+    X_df = X_df.subtract(X.var["means"].values)
+    X_df["Condition"] = X.obs["Condition"].values
+    X_df["Cell Type"] = X.obs[cellType].values
+    
+    X_matrix = X_df.groupby(["Condition", "Cell Type"], observed=False).mean().reset_index()
+    
+    
+    # connet status too
+    
+    conds = pd.unique(X_matrix["Condition"])
+    celltypes = pd.unique(X_matrix["Cell Type"])
+    genes = X.var_names.values            
+    
+    X_tensor = np.empty((len(conds), len(celltypes), len(genes)))
+    X_tensor[:] = np.nan
+    
+    for i, cond in enumerate(conds):
+        for j, celltype in enumerate(celltypes):
+            specific_df = X_matrix.loc[(X_matrix["Condition"] == cond) & (X_matrix["Cell Type"] == celltype)] 
+            X_tensor[i, j, :] = specific_df.iloc[0, 2:].to_numpy()
+          
+    return X_df, X_tensor
 
 
 
