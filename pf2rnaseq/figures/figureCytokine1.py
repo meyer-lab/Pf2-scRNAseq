@@ -30,17 +30,19 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
+    
+    
 
-    X = import_cytokine()
-    X = pf2(X, 50, tolerance=1e-6)
+    # X = import_cytokine()
+    # X = pf2(X, 50, tolerance=1e-6)
 
-    X.uns["Pf2_A"] = correct_conditions(X)
-    stimulations = samples_only(X)["Condition"]
+    # X.uns["Pf2_A"] = correct_conditions(X)
+    # stimulations = samples_only(X)["Condition"]
 
-    plot_condition_factors(X, ax[0], stimulations, groupConditions=True)
-    ax[0].set(yticks=[])
-    plot_eigenstate_factors(X, ax[1])
-    plot_gene_factors(X, ax[2])
-    plot_factor_weight(X, ax[3])
+    # plot_condition_factors(X, ax[0], stimulations, groupConditions=True)
+    # ax[0].set(yticks=[])
+    # plot_eigenstate_factors(X, ax[1])
+    # plot_gene_factors(X, ax[2])
+    # plot_factor_weight(X, ax[3])
 
     return f
