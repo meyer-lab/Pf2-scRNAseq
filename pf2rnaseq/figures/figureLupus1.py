@@ -14,12 +14,15 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-
-    X = read_h5ad("/opt/andrew/lupus/lupus_fitted_ann.h5ad")
-    bulk_matrix, bulk_tensor = pseudobulk_lupus(X)
     
-    print(bulk_matrix)
-    print(np.shape(bulk_tensor))
+    print("Yes")
+    
+    print("New Change")
+    # X = read_h5ad("/opt/andrew/lupus/lupus_fitted_ann.h5ad")
+    # bulk_matrix, bulk_tensor = pseudobulk_lupus(X)
+    
+    # print(bulk_matrix)
+    # print(np.shape(bulk_tensor))
 
 
     return f
