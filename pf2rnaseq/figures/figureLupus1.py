@@ -2,7 +2,7 @@
 XX:
 """
 from matplotlib.pylab import eig
-import plotly.express as px
+#import plotly.express as px
 from anndata import read_h5ad
 from ..imports import pseudobulk_lupus
 from .common import subplotLabel, getSetup
@@ -12,11 +12,12 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-
-
-
-
+# from os.path import join, dirname
+# from tensorly.cp_tensor import CPTensor
+# from tensorly.tucker_tensor import TuckerTesnor, tucker_to_tensor
+# from tensorly.tenalg import multi_mode_dot
+# from tensorly.decomposition import parafac
+# from tensorly.tenalg import outer
 
 def makeFigure():
     """Get a list of the axis objects and create a figure."""
@@ -27,15 +28,24 @@ def makeFigure():
     subplotLabel(ax)
     X = read_h5ad("/opt/andrew/lupus/lupus_fitted_ann.h5ad")
     bulk_matrix, bulk_tensor = pseudobulk_lupus(X)
-    cell_type_names = pd.unique(bulk_matrix["Cell type"])
-    print(bulk_matrix )
+    # cell_type_names = pd.unique(bulk_matrix["Cell type"])
+    # status_type = pd.unique(bulk_matrix["Status"])
+    # Condition_type = pd.unique(bulk_matrix["Condtion"])
+    # genes_type = pd.unique(bulk_matrix["Genes"])
+    # print(bulk_matrix )
 
-    cp = parafac(bulk_tensor, 3)
-    print(cp[1])
-    sns.heatmap(data=cp[1][1], ax=ax[0], xticklabels=[str(ii+1) for ii in range(cp[1][1].shape[1])], yticklabels=cell_type_names)
-    ax[0].setxlabel("Component")
-    ax[0].setxlabel["Cell Type"]
-
+    # cp = parafac(bulk_tensor, 3)
+    # print(cp[1])
+    # sns.heatmap(data=cp[1][1], ax=ax[0], xticklabels=[str(ii+1) for ii in range(cp[1][1].shape[1])], yticklabels=cell_type_names)
+    # ax[0].setxlabel("Component")
+    # ax[0].setxlabel["Cell Type"]
+    # sns.heatmap(data=cp[1][1], ax=ax[1], xticklabels=[str(ii+1) for ii in range(cp[1][1].shape[1])], yticklabels=status_type)
+    # ax[1].setxlabel("Component")
+    # ax[1].setxlabel["Status"]
+    # sns.heatmap(data=cp[1][1], ax=ax[2], xticklabels=[str(ii+1) for ii in range(cp[1][1].shape[1])], yticklabels="Condition_type")
+    # ax[2].setxlabel("Component")
+    # ax[2].setylabel["Condtion"]
+   
    
     #print(np.shape(bulk_matrix))
 
@@ -52,8 +62,8 @@ def makeFigure():
     scores = scores[:, [0, 1, 2, 3,]]
     laodings = loadings[:, [0, 1, 2, 3,]]
 
-    scores_df = pd.DataFrame(date = scores, columns = ["PC1", "PC2", "PC3", "PC4"])
-    loadings_df = pd.DataFrame(date = laodings, columns = ["PC1", "PC2", "PC3", "PC4"])
+    scores_df = pd.DataFrame(data = scores, columns = ["PC1", "PC2", "PC3", "PC4"])
+    loadings_df = pd.DataFrame(data = laodings, columns = ["PC1", "PC2", "PC3", "PC4"])
 
     loadings_df["Gene"] = bulk_matrix_genes_only.columns.to_numpy()
     print(loadings_df)
