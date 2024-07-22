@@ -27,9 +27,17 @@ def makeFigure():
     subplotLabel(ax)
     X = read_h5ad("/opt/andrew/lupus/lupus_fitted_ann.h5ad")
     bulk_matrix, bulk_tensor = pseudobulk_lupus(X)
+    cell_type_names = pd.unique(bulk_matrix["Cell type"])
     print(bulk_matrix )
+
+    cp = parafac(bulk_tensor, 3)
+    print(cp[1])
+    sns.heatmap(data=cp[1][1], ax=ax[0], xticklabels=[str(ii+1) for ii in range(cp[1][1].shape[1])], yticklabels=cell_type_names)
+    ax[0].setxlabel("Component")
+    ax[0].setxlabel["Cell Type"]
+
    
-    print(np.shape(bulk_matrix))
+    #print(np.shape(bulk_matrix))
 
     bulk_matrix_genes_only = bulk_matrix.iloc[0:, 2:-1]
     #print(Bulk_matrix_genes_only)
