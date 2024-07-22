@@ -32,6 +32,8 @@ def makeFigure():
     print(bulk_matrix )
     # bulk_matrix_genes_only = bulk_matrix.iloc[:, 2:-1]
 
+
+
     # pca = PCA(n_components=2)
     # principalComponents = pca.fit_transform(bulk_matrix_genes_only)
     # print(np.shape(principalComponents))
