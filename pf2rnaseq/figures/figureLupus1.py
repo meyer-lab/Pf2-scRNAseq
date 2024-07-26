@@ -32,6 +32,7 @@ def makeFigure():
     X = read_h5ad("/opt/andrew/lupus/lupus_fitted_ann.h5ad")
 
     bulk_matrix, bulk_tensor = pseudobulk_lupus(X)
+    print(pseudobulk_lupus(X))
     # cell_type_names = pd.unique(bulk_matrix["Cell Type"])
     # #genes = pd.unique(bulk_matrix[])
     # condition_type = pd.unique(bulk_matrix["Condition"])
@@ -102,19 +103,25 @@ def makeFigure():
     loadings_df["Gene"] = bulk_matrix_genes_only.columns.to_numpy()
 
     sns.scatterplot(data=scores_df, x="PC1", y="PC2", hue="Cell Type", ax=ax[0]).set_title("Scores")
-    sns.scatterplot(data=scores_df, x="PC1", y="PC3", hue="Status", ax=ax[1]).set_title("Scores")
-    sns.scatterplot(data=scores_df, x="PC1", y="PC4", ax=ax[2]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC1", y="PC3", hue="Cell Type", ax=ax[1]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC1", y="PC4", hue="Cell Type", ax=ax[2]).set_title("Scores")
     sns.scatterplot(data=scores_df, x="PC2", y="PC3", hue="Cell Type", ax=ax[3]).set_title("Scores")
-    sns.scatterplot(data=scores_df, x="PC2", y="PC4", hue="Status", ax=ax[4]).set_title("Scores")
-    sns.scatterplot(data=scores_df, x="PC3", y="PC4", ax=ax[5]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC2", y="PC4", hue="Cell Type", ax=ax[4]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC3", y="PC4", hue="Cell Type", ax=ax[5]).set_title("Scores")
 
+    sns.scatterplot(data=scores_df, x="PC1", y="PC2", hue="Status", ax=ax[6]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC1", y="PC3", hue="Status", ax=ax[7]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC1", y="PC4", hue="Status", ax=ax[8]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC2", y="PC3", hue="Status", ax=ax[9]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC2", y="PC4", hue="Status", ax=ax[10]).set_title("Scores")
+    sns.scatterplot(data=scores_df, x="PC3", y="PC4", hue="Status", ax=ax[11]).set_title("Scores")
 
-    sns.scatterplot(data=loadings_df, x="PC1", y="PC2",ax=ax[6]).set_title("Loadings")
-    sns.scatterplot(data=loadings_df, x="PC1", y="PC3",ax=ax[7]).set_title("Loadings")
-    sns.scatterplot(data=loadings_df, x="PC1", y="PC4",ax=ax[8]).set_title("Loadings")
-    sns.scatterplot(data=loadings_df, x="PC2", y="PC3",ax=ax[9]).set_title("Loadings")
-    sns.scatterplot(data=loadings_df, x="PC2", y="PC4",ax=ax[10]).set_title("Loadings")
-    sns.scatterplot(data=loadings_df, x="PC3", y="PC4",ax=ax[11]).set_title("Loadings")
+    # sns.scatterplot(data=loadings_df, x="PC1", y="PC2",ax=ax[6]).set_title("Loadings")
+    # sns.scatterplot(data=loadings_df, x="PC1", y="PC3",ax=ax[7]).set_title("Loadings")
+    # sns.scatterplot(data=loadings_df, x="PC1", y="PC4",ax=ax[8]).set_title("Loadings")
+    # sns.scatterplot(data=loadings_df, x="PC2", y="PC3",ax=ax[9]).set_title("Loadings")
+    # sns.scatterplot(data=loadings_df, x="PC2", y="PC4",ax=ax[10]).set_title("Loadings")
+    # sns.scatterplot(data=loadings_df, x="PC3", y="PC4",ax=ax[11]).set_title("Loadings")
 
 
     prop_var_df = pca.explained_variance_ratio_
@@ -122,8 +129,8 @@ def makeFigure():
     print(prop_var_df)
     PC_Numbers = np.arange(pca.n_components_) + 1
     print(PC_Numbers)
-    ax[12].scatter(x=PC_Numbers, y=prop_var_df)
-    sns.lineplot(x=PC_Numbers, y=prop_var_df, ax=ax[12])
+    ax[16].scatter(x=PC_Numbers, y=prop_var_df)
+    sns.lineplot(x=PC_Numbers, y=prop_var_df, ax=ax[16])
     plt.xlabel("PC Numbers")
     plt.ylabel("Variance")
     plt.title("R2X")
