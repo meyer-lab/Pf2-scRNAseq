@@ -62,7 +62,7 @@ def plot_gene_pacmap(gene: str, decompType: str, X: anndata.AnnData, ax: Axes):
 
     # Color by values
     values -= np.min(values)
-    values /= np.max(values)
+    values /= np.max(values) / 10.0
     data["val_cat"] = values
     result = tf.shade(
         agg=canvas.points(data, "x", "y", agg=ds.mean("val_cat")),

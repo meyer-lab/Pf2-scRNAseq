@@ -15,18 +15,15 @@ def plot_condition_factors(
     data: AnnData,
     ax: Axes,
     cond_group_labels: Optional[pd.Series] = None,
-    ThomsonNorm=False,
+    condition_label="Condition",
     groupConditions=False,
 ):
     """Plots Pf2 condition factors"""
     pd.set_option("display.max_rows", None)
-    yt = pd.Series(np.unique(data.obs["Condition"]))
+    yt = pd.Series(np.unique(data.obs[condition_label]))
     X = np.array(data.uns["Pf2_A"])
 
     X = np.log10(X)
-    if ThomsonNorm is True:
-        controls = yt.str.contains("CTRL")
-        X = X[controls]
 
     X -= np.median(X, axis=0)
     X /= np.std(X, axis=0)
@@ -46,14 +43,14 @@ def plot_condition_factors(
         # extra padding to leave room for the row colors
         # get list of colors for each label:
         colors = sns.color_palette(
-            n_colors=pd.Series(cond_group_labels).nunique()
+            n_colors=cond_group_labels.nunique()
         ).as_hex()
         lut = {}
         legend_elements = []
-        for index, group in enumerate(pd.Series(cond_group_labels).unique()):
+        for index, group in enumerate(cond_group_labels.unique()):
             lut[group] = colors[index]
             legend_elements.append(Patch(color=colors[index], label=group))
-        row_colors = pd.Series(cond_group_labels).map(lut)
+        row_colors = cond_group_labels.map(lut)
         for iii, color in enumerate(row_colors):
             ax.add_patch(
                 plt.Rectangle(
@@ -135,7 +132,7 @@ def plot_gene_factors(data: AnnData, ax: Axes, trim=True):
 
 
 def plot_gene_factors_partial(
-    cmp: int, dataIn: AnnData, ax: Axes, geneAmount: int = 5, top=True
+    cmp: int, dataIn: AnnData, ax: Axes, geneAmount: int = 5
 ):
     """Plotting weights for gene factors for both most negatively/positively weighted terms"""
     cmpName = f"Cmp. {cmp}"
@@ -143,16 +140,11 @@ def plot_gene_factors_partial(
     df = pd.DataFrame(
         data=dataIn.varm["Pf2_C"][:, cmp - 1], index=dataIn.var_names, columns=[cmpName]
     )
+    df["abs"] = df[cmpName].abs()
     df = df.reset_index(names="Gene")
-    df = df.sort_values(by=cmpName)
+    df = df.sort_values(by="abs", ascending=False)
 
-    if top:
-        sns.barplot(
-            data=df.iloc[-geneAmount:, :], x="Gene", y=cmpName, color="k", ax=ax
-        )
-    else:
-        sns.barplot(data=df.iloc[:geneAmount, :], x="Gene", y=cmpName, color="k", ax=ax)
-
+    sns.barplot(data=df.iloc[:geneAmount, :], x="Gene", y=cmpName, color="k", ax=ax)
     ax.tick_params(axis="x", rotation=90)
 
 

@@ -89,6 +89,17 @@ def import_HTAN() -> anndata.AnnData:
     return prepare_dataset(X, "Condition", geneThreshold=0.1)
 
 
+def import_Vanderbilt_scRNAseq() -> anndata.AnnData:
+    """Imports Vanderbilt's scRNAseq data."""
+
+    nl_epi = anndata.read_h5ad("/opt/extra-storage/CRC/Heiser/VUMC_HTAN_DIS_EPI_V2.h5ad")
+
+    X = anndata.AnnData(X=nl_epi.raw.X, obs=nl_epi.obs, var=nl_epi.raw.var)
+    X.X = csr_matrix(X.X)
+
+    return prepare_dataset(X, "HTAN Specimen ID", geneThreshold=0.01)
+
+
 def import_CCLE() -> anndata.AnnData:
     """Imports barcoded cell data."""
     # TODO: Still need to add gene names and barcodes.
