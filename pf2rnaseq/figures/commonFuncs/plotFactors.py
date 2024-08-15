@@ -20,7 +20,7 @@ def plot_condition_factors(
 ):
     """Plots Pf2 condition factors"""
     pd.set_option("display.max_rows", None)
-    yt = pd.Series(np.unique(data.obs["Condition"]))
+    yt = pd.Series(np.unique(data.obs["time"]))
     X = np.array(data.uns["Pf2_A"])
 
     X = np.log10(X)

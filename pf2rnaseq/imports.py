@@ -2,16 +2,30 @@ import glob
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
-import anndata
+import anndata as ad
 import scanpy as sc
 from scipy.sparse import spmatrix, csr_matrix
 from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
 import pandas as pd
 
+def import_CA():
+    """Imports the CA dataset."""
+    CA_df = pd.read_csv("./time_CA.csv", index_col=0, delimiter=",")
+
+    CA_df.reset_index(names=["sample_id"], inplace=True)
+    CA_df = CA_df.loc[:, ~CA_df.columns.str.contains("status|disease")]
+
+    # convert CA_df to AnnData object with meta data as obs and gene labels as var, with gene expression as X
+    sparse = csr_matrix(CA_df.iloc[:, 3:].to_numpy())
+    CA_ad = ad.AnnData(sparse, obs=CA_df.iloc[:, :3])
+    CA_ad.var_names = CA_df.columns[3:]
+
+    return CA_ad
 
 def prepare_dataset(
-    X: anndata.AnnData, condition_name: str, geneThreshold: float
-) -> anndata.AnnData:
+    X: ad.AnnData, condition_name: str, 
+    # geneThreshold: float
+) -> ad.AnnData:
     assert isinstance(X.X, spmatrix)
     assert np.amin(X.X.data) >= 0.0  # type: ignore
 
@@ -41,7 +55,7 @@ def prepare_dataset(
     return X
 
 
-def import_citeseq() -> anndata.AnnData:
+def import_citeseq() -> ad.AnnData:
     """Imports 5 datasets from Hamad CITEseq."""
     files = ["control", "ic_pod1", "ic_pod7", "sc_pod1", "sc_pod7"]
 
@@ -58,12 +72,12 @@ def import_citeseq() -> anndata.AnnData:
 
         data = {k: futures[i].result() for i, k in enumerate(files)}
 
-    X = anndata.concat(data, merge="same", label="Condition")
+    X = ad.concat(data, merge="same", label="Condition")
 
     return prepare_dataset(X, "Condition", geneThreshold=0.1)
 
 
-def import_HTAN() -> anndata.AnnData:
+def import_HTAN() -> ad.AnnData:
     """Imports Vanderbilt's HTAN 10X data."""
     files = glob.glob("/opt/extra-storage/HTAN/*.mtx.gz")
     futures = []
@@ -84,43 +98,43 @@ def import_HTAN() -> anndata.AnnData:
             result = futures[i].result()
             data[k.split("/")[-1].split("_matrix.")[0]] = result
 
-    X = anndata.concat(data, merge="same", label="Condition")
+    X = ad.concat(data, merge="same", label="Condition")
 
     return prepare_dataset(X, "Condition", geneThreshold=0.1)
 
 
-def import_CCLE() -> anndata.AnnData:
+def import_CCLE() -> ad.AnnData:
     """Imports barcoded cell data."""
     # TODO: Still need to add gene names and barcodes.
     folder = "/opt/extra-storage/asm/Heiser-barcode/CCLE/"
 
     adatas = {
-        "HCT116_1": anndata.read_text(
+        "HCT116_1": ad.read_text(
             Path(folder + "HCT116_tracing_T1.count_mtx.tsv")
         ).T,
-        "HCT116_2": anndata.read_text(
+        "HCT116_2": ad.read_text(
             Path(folder + "HCT116_tracing_T2.count_mtx.tsv")
         ).T,
-        "MDA-MB-231_1": anndata.read_text(
+        "MDA-MB-231_1": ad.read_text(
             Path(folder + "MDA-MB-231_tracing_T1.count_mtx.tsv")
         ).T,
-        "MDA-MB-231_2": anndata.read_text(
+        "MDA-MB-231_2": ad.read_text(
             Path(folder + "MDA-MB-231_tracing_T2.count_mtx.tsv")
         ).T,
     }
 
-    X = anndata.concat(adatas, label="sample")
+    X = ad.concat(adatas, label="sample")
     X.X = csr_matrix(X.X)
 
     return prepare_dataset(X, "sample", geneThreshold=0.1)
 
 
-def import_cytokine() -> anndata.AnnData:
+def import_cytokine() -> ad.AnnData:
     """Import Meyer Cytokine PBMC dataset.
     -- columns from observation data:
     {'Stimulation': Cytokine and Dose}
     """
-    X = anndata.read_h5ad("/opt/extra-storage/Treg_h5ads/Treg_raw.h5ad")
+    X = ad.read_h5ad("/opt/extra-storage/Treg_h5ads/Treg_raw.h5ad")
 
     # Remove multiplexing identifiers
     X = X[:, ~X.var_names.str.match("^CMO3[0-9]{2}$")]  # type: ignore

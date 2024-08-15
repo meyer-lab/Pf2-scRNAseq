@@ -6,16 +6,18 @@ and ratio of condition components based on days
 from anndata import read_h5ad
 from matplotlib.axes import Axes
 import anndata
-from .common import subplotLabel, getSetup
-from .commonFuncs.plotFactors import (
+from pf2rnaseq.figures.common import subplotLabel, getSetup
+from pf2rnaseq.figures.commonFuncs.plotFactors import (
     plot_condition_factors,
     plot_eigenstate_factors,
     plot_gene_factors,
     plot_factor_weight,
 )
-from .commonFuncs.plotPaCMAP import plot_labels_pacmap
+from pf2rnaseq.figures.commonFuncs.plotPaCMAP import plot_labels_pacmap
 import numpy as np
+from pf2rnaseq.imports import import_CA, prepare_dataset
 
+from pf2rnaseq.factorization import pf2
 
 def makeFigure():
     """Get a list of the axis objects and create a figure."""
@@ -26,7 +28,12 @@ def makeFigure():
     subplotLabel(ax)
 
 
-    #Anndata
+    #Import the CA data as a DataFrame and put into an Anndata object
+    CA_ad = import_CA()
+    X = prepare_dataset(CA_ad, "sample_id")
+
+    pf2(X, rank=10)
+
     plot_condition_factors(X, ax[0])
     plot_eigenstate_factors(X, ax[1])
     plot_gene_factors(X, ax[2])
@@ -37,3 +44,4 @@ def makeFigure():
 
     return f
 
+makeFigure()
