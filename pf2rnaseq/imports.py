@@ -22,27 +22,49 @@ def import_CA():
 
     return CA_ad
 
-def prepare_dataset(
+
+def prepare_dataset_bulk(
     X: ad.AnnData, condition_name: str, 
-    # geneThreshold: float
+    geneThreshold: float
 ) -> ad.AnnData:
     assert isinstance(X.X, spmatrix)
     assert np.amin(X.X.data) >= 0.0  # type: ignore
 
-    # # Filter out genes with too few reads
-    # readmean, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
-    # X = X[:, readmean > geneThreshold]
+    # Filter out genes with too few reads
+    readmean, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
+    X = X[:, readmean > geneThreshold]
 
-    # # Normalize read depth
-    # sc.pp.normalize_total(X, exclude_highly_expressed=False, inplace=True)
+    # # Get the indices for subsetting the data
+    _, sgIndex = np.unique(X.obs_vector(condition_name), return_inverse=True)
+    X.obs["condition_unique_idxs"] = sgIndex
 
-    # # Scale genes by sum
-    # readmean, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
-    # readsum = X.shape[0] * readmean
-    # inplace_column_scale(X.X, 1.0 / readsum)
+    # Pre-calculate gene means
+    means, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
+    X.var["means"] = means
 
-    # # Transform values
-    # X.X.data = np.log10((1000.0 * X.X.data) + 1.0)  # type: ignore
+    return X
+
+def prepare_dataset(
+    X: ad.AnnData, condition_name: str, 
+    geneThreshold: float
+) -> ad.AnnData:
+    assert isinstance(X.X, spmatrix)
+    assert np.amin(X.X.data) >= 0.0  # type: ignore
+
+    # Filter out genes with too few reads
+    readmean, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
+    X = X[:, readmean > geneThreshold]
+
+    # Normalize read depth
+    sc.pp.normalize_total(X, exclude_highly_expressed=False, inplace=True)
+
+    # Scale genes by sum
+    readmean, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
+    readsum = X.shape[0] * readmean
+    inplace_column_scale(X.X, 1.0 / readsum)
+
+    # Transform values
+    X.X.data = np.log10((1000.0 * X.X.data) + 1.0)  # type: ignore
 
     # # Get the indices for subsetting the data
     _, sgIndex = np.unique(X.obs_vector(condition_name), return_inverse=True)

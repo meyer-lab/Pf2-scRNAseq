@@ -14,22 +14,21 @@ cmap = sns.diverging_palette(240, 10, as_cmap=True)
 def plot_condition_factors(
     data: AnnData,
     ax: Axes,
+    condition_name: str,
     cond_group_labels: Optional[pd.Series] = None,
     ThomsonNorm=False,
     groupConditions=False,
 ):
     """Plots Pf2 condition factors"""
     pd.set_option("display.max_rows", None)
-    yt = pd.Series(np.unique(data.obs["time"]))
+    yt = pd.Series(np.unique(data.obs[condition_name]))
     X = np.array(data.uns["Pf2_A"])
 
-    X = np.log10(X)
-    if ThomsonNorm is True:
-        controls = yt.str.contains("CTRL")
-        X = X[controls]
+    # X = np.log10(X)
+    XX = X
 
-    X -= np.median(X, axis=0)
-    X /= np.std(X, axis=0)
+    X -= np.median(XX, axis=0)
+    X /= np.std(XX, axis=0)
 
     ind = reorder_table(X)
     X = X[ind]
@@ -170,6 +169,7 @@ def reorder_table(projs: np.ndarray) -> np.ndarray:
     assert projs.ndim == 2
     Z = sch.linkage(projs, method="complete", metric="cosine", optimal_ordering=True)
     return sch.leaves_list(Z)
+
 
 
 def bot_top_genes(X, cmp, geneAmount=5):
