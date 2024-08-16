@@ -1,6 +1,5 @@
 """
-CITEseq: Pf2 factors, weights, PaCMAP labeled by all conditions/leiden clusters,
-and ratio of condition components based on days
+CC: Pf2 factors
 """
 
 from anndata import read_h5ad
