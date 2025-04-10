@@ -19,12 +19,11 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    X = read_h5ad("/home/nicoleb/Cytokine_Pf2__NB30_noreg.h5ad")
-    #X = read_h5ad('/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Cytokine_Pf2_annotated_NB_new.h5ad')
+    X = read_h5ad("/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad")
+    
     #X = import_cytokine()
-    #X = pf2(X, 30, tolerance=1e-6)
-    #plot_labels_pacmap(X, "Condition",ax[0], condition='control' )
-    #plot_wp_pacmap(X, 9, ax[0])
+    #X = pf2(X, 30)
+    
     plot_gene_pacmap('IL2RA',"Pf2",X, ax[0])
 
     return f

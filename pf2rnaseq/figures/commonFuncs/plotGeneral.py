@@ -435,15 +435,7 @@ def plot_boxplot_gene_celltype(
     
     df = dataDF[dataDF["Condition"].isin(conds)]
     df = df[df["Cell Type"].isin(cells)]
-    print(df)
     
-    #print(dataDF)
-    
-    #print(dataDF)
-    #df = pd.melt(df, id_vars=["Condition", "Cell Type"], value_vars=gene).rename(
-       # columns={"variable": "Gene", "value": "Value"}
-    #)
-    #print(df)
     if mean is True:
         df = df.groupby(["Condition", "Cell Type"], observed=False).mean()
 
@@ -451,10 +443,6 @@ def plot_boxplot_gene_celltype(
     
     
     print(df)
-   # df["Condition"] = np.where(df["Condition"].isin(conds), df["Condition"], "Other")
-    #df["Condition"] = df[df["Condition"]==conds]
-    #for i in conds:
-        #df = df.replace({"Condition": {i: categoryCond}})
 
     sns.boxplot(
         data=df,

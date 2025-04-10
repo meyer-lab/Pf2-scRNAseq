@@ -14,7 +14,7 @@ from .commonFuncs.plotPaCMAP import (
 from ..factorization import correct_conditions
 from ..imports import import_cytokine,import_pf2Cytokine30 
 from ..factorization import pf2
-from ..gating import gateThomsonCellsLeiden
+
 
 
 def makeFigure():
@@ -40,4 +40,3 @@ def makeFigure():
         plot_wp_pacmap(X, cmp, ax[2 * i + 1], cbarMax=0.25)
 
     return f
-s

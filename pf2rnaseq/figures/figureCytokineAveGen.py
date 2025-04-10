@@ -19,10 +19,9 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    #X = read_h5ad('/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Cytokine_Pf2_annotated_NB_new.h5ad')
+    
     X = import_pf2Cytokine30()
-    #X = pf2(X, 30)
-    #X.write_h5ad("Cytokine_Pf2__NB30_022725.h5ad")
+    
     immune_suppressive = ["FOXP3","TIGIT","ICOS","IL2RA","INDO","TGFB1","SOCS3","SOCS1" "MCL1","BCL2", "TIM-3","TNFRSF18"]  
     plot_gene_set_expression(X, immune_suppressive,ax[0])
     

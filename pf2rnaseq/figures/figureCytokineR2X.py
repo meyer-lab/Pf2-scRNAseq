@@ -22,7 +22,7 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    #X = read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Cytokine_Pf2_annotated_NB_new.h5ad")
+    
     X = import_cytokine()
     
     X = pf2(X, 30)

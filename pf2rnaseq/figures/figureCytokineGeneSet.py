@@ -34,12 +34,12 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
     X = import_cytokine()
-    #X=read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Cytokine_Pf2__NB30_regA.h5ad")
+    
 
     X = pf2(X, 15,regularize_A=True, regParam=5e-1)
     
     X.uns["Pf2_A"] = correct_conditions(X)
-    #X = read_h5ad('/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Cytokine_Pf2__NB30_noreg.h5ad')
+    
     immune_suppressive = ["FOXP3","TIGIT","ICOS","IL2RA","PDCD1","TGFB1","SOCS3","PD1", "LAG3","TNFRSF18","CTLA4"]  
     immune_activating = ["GZMA","GZMAB", "PRF1"] 
     plot_geneSet_factors(X,ax[0],immune_suppressive, False )

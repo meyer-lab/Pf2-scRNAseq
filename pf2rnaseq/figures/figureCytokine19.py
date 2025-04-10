@@ -1,5 +1,5 @@
 """
-Plot the immune suppression score for each cell type using scanpy score genes
+Plot the score for each cell type using scanpy score genes
 """
 
 import anndata

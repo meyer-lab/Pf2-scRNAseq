@@ -15,6 +15,8 @@ import seaborn as sns
 from factorization import pf2
 from imports import import_cytokine
 
+
+ranks = np.arange(1, 31)
 # Define the sweep configuration
 sweep_config = {
     'method': 'grid',  # grid search for thorough exploration
@@ -24,10 +26,10 @@ sweep_config = {
     },
     'parameters': {
         'rank': {
-            'values': [10, 15, 20, 30]  # Different component numbers to test
+            'values': ranks  # Different component numbers to test
         },
         'regParam': {
-            'values': [0.0, 5e-5, 1e-4]  # Different L1 regularization strengths
+            'values': [0.0, 1e-6, 1e-5, 5e-5, 1e-4]  # Different L1 regularization strengths
         }
     }
 }
@@ -73,12 +75,8 @@ def train():
                              random_state=42, 
                              doEmbedding=False, 
                              regParam=config.regParam,
-                             regularize_A=True,
                              r2x=True)
         
-        # Calculate sparsity metrics for base model
-        sparsity_A = calculate_sparsity(np.array(base_model.uns["Pf2_A"]))
-       
         
         sparsity_C = calculate_sparsity(base_model.varm["Pf2_C"])
         
@@ -86,7 +84,6 @@ def train():
         # Log R2X and sparsity metrics
         wandb.log({
             "r2x": r2x,
-            "sparsity_A": sparsity_A,
            
             "sparsity_C": sparsity_C
             
@@ -103,8 +100,7 @@ def train():
                                  rank=config.rank, 
                                  random_state=i, 
                                  doEmbedding=False, 
-                                 regParam=config.regParam,
-                                 regularize_A=True)
+                                 regParam=config.regParam)
             
             # Calculate FMS between base model and bootstrap model
             fms_score = calculateFMS(base_model, bootstrap_model)

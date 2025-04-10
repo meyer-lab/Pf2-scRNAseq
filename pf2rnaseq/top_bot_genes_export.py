@@ -107,7 +107,7 @@ def export_genes_to_csv(X, output_path="component_genes.csv", components=range(1
     return output_path
 
 
-X = read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Cytokine_Pf2__NB30_regA.h5ad")
-export_genes_to_csv(X, output_path="component_genes_regA.xlsx", components=range(1, 31), geneAmount=30)    
+X = read_h5ad("/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad")
+export_genes_to_csv(X, output_path="component_genes.xlsx", components=range(1, 31), geneAmount=30)    
 
 

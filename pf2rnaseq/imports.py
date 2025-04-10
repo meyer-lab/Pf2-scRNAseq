@@ -171,9 +171,6 @@ def import_Heiser() -> anndata.AnnData:
 
     # Update data
     data = new_adata
-
-    # Remove multiplexing identifiers
-   
     
     return prepare_dataset(data, "sample_id", geneThreshold=0.01) 
 

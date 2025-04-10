@@ -38,12 +38,11 @@ def pf2(
     doEmbedding: bool = True,
     tolerance=1e-9,
     regParam=0.0,
-    regularize_A=False,
     r2x=False
 ):
     cupy.cuda.Device(1).use()
     pf_out, R2X = parafac2_nd(
-        X, rank=rank, random_state=random_state, tol=tolerance, n_iter_max=500, l1=regParam, regularize_A=regularize_A
+        X, rank=rank, random_state=random_state, tol=tolerance, n_iter_max=500, l1=regParam
     )
 
     X = store_pf2(X, pf_out)

@@ -18,7 +18,7 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
 
-    X = import_pf2Cytokine30 ()
+    X = read_h5ad("/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad")
 
     cmp=16
 

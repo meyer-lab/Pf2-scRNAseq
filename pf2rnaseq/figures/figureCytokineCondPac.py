@@ -1,4 +1,4 @@
-"Plot labels pacmap"
+"Plot condition pacmap"
 
 import pandas as pd
 from anndata import read_h5ad
@@ -17,7 +17,7 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    X = read_h5ad('/home/nicoleb/Cytokine_Pf2_annotated_NB_new.h5ad')
+    X = read_h5ad('/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad')
     #X = import_cytokine()
     #X = pf2(X, 30, tolerance=1e-6)
     

@@ -34,7 +34,7 @@ def makeFigure():
     
     X = import_cytokine()
     #X=read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Cytokine_Pf2__NB30_regA.h5ad")
-    X = pf2(X, 15,regularize_A=True, regParam=0.7)
+    X = pf2(X, 15)
     
     X.uns["Pf2_A"] = correct_conditions(X)
    

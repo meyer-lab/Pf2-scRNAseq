@@ -195,7 +195,6 @@ packaging==24.1
     # via statsmodels
     # via xarray
 pacmap==0.7.3
-    # via parafac2
     # via pf2rnaseq
 pandas==2.2.2
     # via anndata
@@ -211,7 +210,7 @@ pandas==2.2.2
     # via statsmodels
     # via tlviz
     # via xarray
-parafac2 @ git+https://github.com/meyer-lab/parafac2.git@e46dd4251b401f5c959fe0ce06e09b3c982e4898
+parafac2 @ git+https://github.com/meyer-lab/parafac2.git@6f7c98e33bd35ef5cc23ffe71d1d10d5442ecfd2
     # via pf2rnaseq
 param==2.1.1
     # via datashader
