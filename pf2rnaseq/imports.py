@@ -18,7 +18,7 @@ def prepare_dataset(
     # Filter out genes with too few reads
     readmean, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
     X = X[:, readmean > geneThreshold]
-
+    X._init_as_actual(X.copy())
     # Normalize read depth
     sc.pp.normalize_total(X, exclude_highly_expressed=False, inplace=True)
 
@@ -33,6 +33,7 @@ def prepare_dataset(
     # Get the indices for subsetting the data
     _, sgIndex = np.unique(X.obs_vector(condition_name), return_inverse=True)
     X.obs["condition_unique_idxs"] = sgIndex
+    X.obs["condition_unique_idxs"] = X.obs["condition_unique_idxs"].astype("category")
 
     # Pre-calculate gene means
     means, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
@@ -124,8 +125,101 @@ def import_cytokine() -> anndata.AnnData:
 
     # Remove multiplexing identifiers
     X = X[:, ~X.var_names.str.match("^CMO3[0-9]{2}$")]  # type: ignore
+    
+    return prepare_dataset(X, "Condition", geneThreshold=0.002) #0.1
 
-    return prepare_dataset(X, "Condition", geneThreshold=0.05)
+def import_pf2Cytokine30() -> anndata.AnnData:
+    """Import Meyer Cytokine PBMC dataset after pf2 run with 30 components.
+    -- columns from observation data:
+    {'Stimulation': Cytokine and Dose}
+    """
+    X = anndata.read_h5ad("/opt/extra-storage/pf2_results/cytok_pf2_30.h5ad")
+   
+   
+
+    return X
+
+def import_Heiser() -> anndata.AnnData:
+    """Import Heiser C3TAg dataset.
+    -- columns from observation data:
+    
+    """
+    data = anndata.read_h5ad("/home/nicoleb/Heiser.h5ad")
+    current_X = data.X.copy()
+
+    # Create variable names and get raw.X, switching raw.X with .X  since .X is currently scaled data and raw.X is the unscaled data 
+    var_names = data.var_names
+    raw_X = data.raw.X
+
+    # Create a new AnnData with raw.X as the main matrix
+    new_adata = anndata.AnnData(
+    X=raw_X,
+    obs=data.obs,
+    var=data.raw.var if hasattr(data.raw, 'var') else data.var
+    )
+
+    # Copy over other attributes
+    if hasattr(data, 'layers'):
+        new_adata.layers = data.layers.copy()
+    if hasattr(data, 'obsm'):
+        new_adata.obsm = data.obsm.copy()
+    if hasattr(data, 'uns'):
+        new_adata.uns = data.uns.copy()
+
+    # Create a raw attribute with the original .X
+    new_adata.raw = data.copy()
+
+    # Update data
+    data = new_adata
+
+    # Remove multiplexing identifiers
+   
+    
+    return prepare_dataset(data, "sample_id", geneThreshold=0.01) 
+
+def import_MouseImmune() -> anndata.AnnData:
+    """Import mouse immune dictionary data.
+    -- columns from observation data:
+    
+    """
+    data = anndata.read_h5ad("/home/nicoleb/MouseImmune.h5ad")
+    current_X = data.X.copy()
+
+    # Create variable names and get raw.X, switching raw.X with .X  since .X is currently scaled data and raw.X is the unscaled data 
+    var_names = data.var_names
+    raw_X = data.raw.X
+
+    # Create a new AnnData with raw.X as the main matrix
+    new_adata = anndata.AnnData(
+    X=raw_X,
+    obs=data.obs,
+    var=data.var
+    )
+
+    # Copy over other attributes
+    if hasattr(data, 'layers'):
+        new_adata.layers = data.layers.copy()
+    if hasattr(data, 'obsm'):
+        new_adata.obsm = data.obsm.copy()
+    if hasattr(data, 'uns'):
+        new_adata.uns = data.uns.copy()
+
+    # Create a raw attribute with the original .X
+    new_adata.raw = data.copy()
+
+    # Update data
+    data = new_adata
+    selected_samples = ['IL10', 'IL2','IL7','TGF-beta-1','IL12','PBS']  
+    mouse_immune_subset = data[data.obs['sample'].isin(selected_samples)]
+   
+    print(f"Original shape: {data.shape}, Subset shape: {mouse_immune_subset.shape}")
+    
+
+    
+   
+    
+    return prepare_dataset(mouse_immune_subset, "sample", geneThreshold=0.01) 
+
 
 
 def pseudobulk_lupus(X, cellType="Cell Type"):

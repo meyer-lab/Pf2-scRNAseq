@@ -55,7 +55,7 @@ def subplotLabel(axs: list[plt.Axes]):
         ax.text(
             -0.2,
             1.2,
-            ascii_letters[ii],
+            ascii_letters[0], #put ii back in later
             transform=ax.transAxes,
             fontweight="bold",
             va="top",

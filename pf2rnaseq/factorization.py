@@ -7,11 +7,13 @@ import anndata
 import scipy.sparse as sps
 import numpy as np
 from tqdm import tqdm
+import cupy
 
 
 def correct_conditions(X: anndata.AnnData):
-    """Correct the conditions factors by overall read depth."""
-    sgIndex = X.obs["condition_unique_idxs"]
+    """Correct the conditions factors by overall read depth. Ensures that weighting is not affected by cell count difference"""
+    #sgIndex = X.obs["condition_unique_idxs"]
+    sgIndex = X.obs["condition_unique_idxs"].cat.codes
     counts = np.zeros((np.amax(sgIndex) + 1, 1))
 
     cond_mean = gmean(X.uns["Pf2_A"], axis=1)
@@ -35,9 +37,13 @@ def pf2(
     random_state=1,
     doEmbedding: bool = True,
     tolerance=1e-9,
+    regParam=0.0,
+    regularize_A=False,
+    r2x=False
 ):
-    pf_out, _ = parafac2_nd(
-        X, rank=rank, random_state=random_state, tol=tolerance, n_iter_max=500
+    cupy.cuda.Device(1).use()
+    pf_out, R2X = parafac2_nd(
+        X, rank=rank, random_state=random_state, tol=tolerance, n_iter_max=500, l1=regParam, regularize_A=regularize_A
     )
 
     X = store_pf2(X, pf_out)
@@ -45,8 +51,11 @@ def pf2(
     if doEmbedding:
         pcm = PaCMAP(random_state=random_state)
         X.obsm["X_pf2_PaCMAP"] = pcm.fit_transform(X.obsm["projections"])  # type: ignore
+    if r2x:
 
-    return X
+        return X, R2X
+    else:
+        return X
 
 
 def pf2_pca_r2x(X: anndata.AnnData, ranks):
