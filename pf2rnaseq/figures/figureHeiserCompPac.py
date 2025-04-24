@@ -30,12 +30,6 @@ def makeFigure():
     X=import_Heiser()
     X = pf2(X, 30)
     X.uns["Pf2_A"] = correct_conditions(X)
-    X_minimal = X.copy()
-    import scipy.sparse as sp
-# Replace the expression matrix with an empty sparse matrix
-# This maintains the shape but uses almost no space
-    X_minimal.X = sp.csr_matrix(X.shape)
-    X_minimal.write_h5ad("/home/nicoleb/C3TAg_Pf2_30.h5ad")
     
     
 
