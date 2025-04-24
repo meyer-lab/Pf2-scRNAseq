@@ -18,10 +18,9 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
     X = read_h5ad('/home/nicoleb/C3TAg_Pf2_30.h5ad')
-    #X = import_cytokine()
-    #X = pf2(X, 30, tolerance=1e-6)
+   
     
     
-    plot_labels_pacmap(X,'', ax[0])
+    plot_labels_pacmap(X,'treatment', ax[0])
 
     return f
