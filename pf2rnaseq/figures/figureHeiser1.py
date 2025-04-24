@@ -35,12 +35,15 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    X= read_h5ad('/home/nicoleb/Heiser_minimal.h5ad')
-    #X = import_Heiser()
+    X = import_Heiser()
     
-    #X = pf2(X, 15)
+    X = pf2(X, 30)
     
-    #X.uns["Pf2_A"] = correct_conditions(X)
+    X.uns["Pf2_A"] = correct_conditions(X)
+ 
+   
+
+   
     
     
 
@@ -49,7 +52,7 @@ def makeFigure():
     
     
     stimulations = samples_only(X)["treatment"]
-    tumors = samples_only(X)["tumorType"]
+    tumors = samples_only(X)["expBatch"]
     print(stimulations)
     
     #plot_condition_factors(X, ax[0], stimulations, cond="sample_id", groupConditions=True)

@@ -23,10 +23,10 @@ def makeFigure():
 
     X = import_Heiser()
     percentList = np.arange(0.0, 55.0, 5.0)
-    plot_fms_percent_drop(X, ax[0], percentList=percentList, runs=2)
+    #plot_fms_percent_drop(X, ax[0], percentList=percentList, runs=2)
 
-    ranks = list(range(1, 31))
-    plot_fms_diff_ranks(X, ax[1], ranksList=ranks, runs=3)
+    ranks = list(range(30, 51))
+    plot_fms_diff_ranks(X, ax[1], ranksList=ranks, runs=2)
 
     return f
 
@@ -57,7 +57,7 @@ def plot_fms_percent_drop(
     ax: Axes,
     percentList: np.ndarray,
     runs: int,
-    rank: int = 35,
+    rank: int = 30,
 ):
   #Plots FMS score when percentage is removed from data
     dataX = pf2(X, rank, doEmbedding=False)

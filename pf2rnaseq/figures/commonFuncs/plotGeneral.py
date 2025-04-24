@@ -315,17 +315,17 @@ def plot_cell_gene_corr(
     )
 
 
-def cell_count_perc_df(X, celltype="Cell Type", status=False):
+def cell_count_perc_df(X, celltype="Cell Type", status=False, grouping="Condition"):
     """Returns DF with cell counts and percentages for experiment"""
     if status is False:
-        grouping = [celltype, "Condition"]
+        grouping = [celltype, grouping]
     else:
         grouping = [celltype, "Condition", "SLE_status"]
 
     df = X.obs[grouping].reset_index(drop=True)
 
     dfCond = (
-        df.groupby(["Condition"], observed=True).size().reset_index(name="Cell Count")
+        df.groupby([grouping], observed=True).size().reset_index(name="Cell Count")
     )
     dfCellType = (
         df.groupby(grouping, observed=True).size().reset_index(name="Cell Count")
@@ -333,11 +333,11 @@ def cell_count_perc_df(X, celltype="Cell Type", status=False):
     dfCellType["Cell Count"] = dfCellType["Cell Count"].astype("float")
 
     dfCellType["Cell Type Percentage"] = 0.0
-    for cond in np.unique(df["Condition"]):
-        dfCellType.loc[dfCellType["Condition"] == cond, "Cell Type Percentage"] = (
+    for cond in np.unique(df[grouping]):
+        dfCellType.loc[dfCellType[grouping] == cond, "Cell Type Percentage"] = (
             100
-            * dfCellType.loc[dfCellType["Condition"] == cond, "Cell Count"].to_numpy()
-            / dfCond.loc[dfCond["Condition"] == cond]["Cell Count"].to_numpy()
+            * dfCellType.loc[dfCellType[grouping] == cond, "Cell Count"].to_numpy()
+            / dfCond.loc[dfCond[grouping] == cond]["Cell Count"].to_numpy()
         )
 
     dfCellType.rename(columns={celltype: "Cell Type"}, inplace=True)
