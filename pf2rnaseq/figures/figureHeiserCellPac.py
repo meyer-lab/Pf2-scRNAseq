@@ -22,6 +22,6 @@ def makeFigure():
     #X = pf2(X, 30, tolerance=1e-6)
     
     
-    plot_labels_pacmap(X,'expBatch', ax[0])
+    plot_labels_pacmap(X,'lineage', ax[0])
 
     return f
