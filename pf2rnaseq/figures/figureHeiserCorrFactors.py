@@ -10,8 +10,8 @@ import anndata
 from .common import subplotLabel, getSetup
 
 from .figureHeiserCorrelation import partial_correlation_matrix
-#from ..data_import import condition_factors_meta
-#from .commonFuncs.plotGeneral import bal_combine_bo_covid
+# from ..data_import import condition_factors_meta
+# from .commonFuncs.plotGeneral import bal_combine_bo_covid
 
 
 def makeFigure():
@@ -20,7 +20,7 @@ def makeFigure():
     subplotLabel(ax)
 
     X = anndata.read_h5ad("/home/nicoleb/C3TAg_Pf2_30.h5ad")
-    #X.uns["Pf2_A"] = correct_conditions(X)
+    # X.uns["Pf2_A"] = correct_conditions(X)
     X.uns["Pf2_A"] -= np.min(X.uns["Pf2_A"], axis=0)
     X.uns["Pf2_A"] += np.median(X.uns["Pf2_A"], axis=0)
     X.uns["Pf2_A"] = np.log(X.uns["Pf2_A"])

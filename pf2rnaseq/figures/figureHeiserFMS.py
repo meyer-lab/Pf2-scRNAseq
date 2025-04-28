@@ -1,5 +1,5 @@
 """
-factorization score 
+factorization score
 """
 
 import anndata
@@ -23,7 +23,7 @@ def makeFigure():
 
     X = import_Heiser()
     percentList = np.arange(0.0, 55.0, 5.0)
-    #plot_fms_percent_drop(X, ax[0], percentList=percentList, runs=2)
+    # plot_fms_percent_drop(X, ax[0], percentList=percentList, runs=2)
 
     ranks = list(range(30, 51))
     plot_fms_diff_ranks(X, ax[1], ranksList=ranks, runs=2)
@@ -59,7 +59,7 @@ def plot_fms_percent_drop(
     runs: int,
     rank: int = 30,
 ):
-  #Plots FMS score when percentage is removed from data
+    # Plots FMS score when percentage is removed from data
     dataX = pf2(X, rank, doEmbedding=False)
 
     fmsLists = []
@@ -114,7 +114,7 @@ def plot_fms_diff_ranks(
     ranksList: list[int],
     runs: int,
 ):
-    #Plots FMS when using different Pf2 components
+    # Plots FMS when using different Pf2 components
     fmsLists = []
 
     for j in range(0, runs, 1):

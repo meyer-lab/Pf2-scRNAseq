@@ -1,6 +1,7 @@
 """
 Heiser: Highly weighted genes per component
 """
+
 from anndata import read_h5ad
 from .common import getSetup
 from .commonFuncs.plotFactors import plot_gene_factors_partial
@@ -14,7 +15,7 @@ def makeFigure():
     # Get list of axis objects
     ax, f = getSetup((21, 24), (10, 10))
     X = import_Heiser()
-   
+
     X = pf2(X, 30)
 
     X.uns["Pf2_A"] = correct_conditions(X)

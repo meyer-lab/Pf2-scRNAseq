@@ -32,9 +32,8 @@ def plot_r2x(data, rank_vec, ax: Axes):
         yticks=np.linspace(
             0, np.max(np.append(r2xError[0], r2xError[1])) + 0.01, num=5
         ),
-    
     )
-    ax.legend() 
+    ax.legend()
 
 
 def plot_avegene_per_celltype(adata, genes, ax, cellType="Cell Type"):
@@ -44,7 +43,7 @@ def plot_avegene_per_celltype(adata, genes, ax, cellType="Cell Type"):
     dataDF = dataDF.subtract(genesV.var["means"].values)
     dataDF["Condition"] = genesV.obs["Condition"].values
     dataDF["Cell Type"] = genesV.obs[cellType].values
-    
+
     data = pd.melt(dataDF, id_vars=["Condition", "Cell Type"], value_vars=genes).rename(
         columns={"variable": "Gene", "value": "Value"}
     )
@@ -60,9 +59,7 @@ def plot_avegene_per_celltype(adata, genes, ax, cellType="Cell Type"):
     )
 
 
-def plot_avegene_per_category(
-    conds, gene, adata, ax, mean=True, cellType="Cell Type"
-):
+def plot_avegene_per_category(conds, gene, adata, ax, mean=True, cellType="Cell Type"):
     """Plots average gene expression across cell types for a category of drugs"""
     genesV = adata[:, gene]
     dataDF = genesV.to_df()
@@ -78,12 +75,11 @@ def plot_avegene_per_category(
 
     df = df.rename(columns={"Value": "Average Gene Expression For Drugs"}).reset_index()
     df = df[df["Condition"].isin(conds)]
-    
 
-   # df["Condition"] = np.where(df["Condition"].isin(conds), df["Condition"], "Other")
-    #df["Condition"] = df[df["Condition"]==conds]
-    #for i in conds:
-        #df = df.replace({"Condition": {i: categoryCond}})
+    # df["Condition"] = np.where(df["Condition"].isin(conds), df["Condition"], "Other")
+    # df["Condition"] = df[df["Condition"]==conds]
+    # for i in conds:
+    # df = df.replace({"Condition": {i: categoryCond}})
 
     sns.boxplot(
         data=df.loc[df["Gene"] == gene],
@@ -96,8 +92,6 @@ def plot_avegene_per_category(
     ax.set(title=gene)
     ax.set_xticks(ax.get_xticks())
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=45)
-
-
 
 
 def heatmapGeneFactors(
@@ -192,11 +186,11 @@ def gene_plot_cells(
 
 
 def gene_plot_conditions(X, condition: str, genes, ax: Axes, hue=None, unique=None):
-    """Plots two genes on either a per cell or per cell type basis"""  
+    """Plots two genes on either a per cell or per cell type basis"""
     adata = X[:, [genes[0], genes[1]]]
-    sc.pp.subsample(adata, fraction=0.01, random_state=0)  
+    sc.pp.subsample(adata, fraction=0.01, random_state=0)
 
-    dataDF = pd.DataFrame(columns=genes, data=adata.X)  
+    dataDF = pd.DataFrame(columns=genes, data=adata.X)
     dataDF[condition] = adata.obs[condition].values
     dataDF[condition] = dataDF[condition].astype("str")
     if hue:
@@ -324,9 +318,7 @@ def cell_count_perc_df(X, celltype="Cell Type", status=False, grouping="Conditio
 
     df = X.obs[grouping].reset_index(drop=True)
 
-    dfCond = (
-        df.groupby([grouping], observed=True).size().reset_index(name="Cell Count")
-    )
+    dfCond = df.groupby([grouping], observed=True).size().reset_index(name="Cell Count")
     dfCellType = (
         df.groupby(grouping, observed=True).size().reset_index(name="Cell Count")
     )
@@ -345,11 +337,10 @@ def cell_count_perc_df(X, celltype="Cell Type", status=False, grouping="Conditio
     return dfCellType
 
 
-
 def plot_gene_set_expression(adata, gene_set, ax: Axes):
     """
     Plots the average gene expression level for a given gene set per condition.
-    
+
     Parameters:
     adata (anndata.AnnData): The AnnData object containing the data.
     gene_set (list): A list of genes to include in the gene set.
@@ -366,7 +357,6 @@ def plot_gene_set_expression(adata, gene_set, ax: Axes):
     dataDF = genesV.to_df()
     dataDF = dataDF.subtract(genesV.var["means"].values)
     dataDF["Condition"] = genesV.obs["Condition"].values
-    
 
     # Calculate the average expression for the gene set
     dataDF["Average Gene Expression"] = dataDF[valid_genes].mean(axis=1)
@@ -376,7 +366,6 @@ def plot_gene_set_expression(adata, gene_set, ax: Axes):
         data=dataDF,
         x="Condition",
         y="Average Gene Expression",
-        
         ax=ax,
         showfliers=False,
     )
@@ -385,7 +374,6 @@ def plot_gene_set_expression(adata, gene_set, ax: Axes):
     ax.set_ylabel("Average Gene Expression")
     ax.set_xticks(ax.get_xticks())
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=45)
-
 
 
 def rotate_xaxis(ax, rotation=90):
@@ -400,10 +388,6 @@ def rotate_yaxis(ax, rotation=90):
     ax.set_yticklabels(labels=ax.get_yticklabels(), rotation=rotation)
 
 
-
-
-
-
 def plot_boxplot_gene_celltype(
     conds, gene, adata, ax, mean=False, cellType="Cell Type", cells=["T reg"]
 ):
@@ -411,14 +395,16 @@ def plot_boxplot_gene_celltype(
     grouping = [cellType, "Condition"]
 
     df = adata.obs[grouping].reset_index(drop=True)
-    grouped_df = adata.obs.groupby(["CellType2", "Condition"], observed=False).size().reset_index(name="Cell Count")
-    
-    
+    grouped_df = (
+        adata.obs.groupby(["CellType2", "Condition"], observed=False)
+        .size()
+        .reset_index(name="Cell Count")
+    )
+
     df = df[df["Condition"].isin([conds[0]])]
     df = df[df["CellType2"].isin(cells)]
-  
-    
-    #print(df)
+
+    # print(df)
     genesV = adata[:, gene]
     if scipy.sparse.issparse(genesV.X):
         # If the data is sparse, convert to dense array first
@@ -432,16 +418,15 @@ def plot_boxplot_gene_celltype(
     dataDF = pd.DataFrame(expr_values, columns=[gene])
     dataDF["Condition"] = genesV.obs["Condition"].values
     dataDF["Cell Type"] = genesV.obs["CellType2"].values
-    
+
     df = dataDF[dataDF["Condition"].isin(conds)]
     df = df[df["Cell Type"].isin(cells)]
-    
+
     if mean is True:
         df = df.groupby(["Condition", "Cell Type"], observed=False).mean()
 
     df.rename(columns={gene: "Gene Expression"}, inplace=True)
-    
-    
+
     print(df)
 
     sns.boxplot(
@@ -455,10 +440,3 @@ def plot_boxplot_gene_celltype(
     ax.set(title=gene)
     ax.set_xticks(ax.get_xticks())
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=45)
-
-
-
-    
-
-
-

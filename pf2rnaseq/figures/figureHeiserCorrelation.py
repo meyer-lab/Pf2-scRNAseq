@@ -9,13 +9,12 @@ import pandas as pd
 from .common import getSetup
 
 
-
 def makeFigure():
     """Get a list of the axis objects and create a figure."""
     ax, f = getSetup((30, 30), (2, 2))
 
     X = anndata.read_h5ad("/home/nicoleb/C3TAg_Pf2_30.h5ad")
-    #X.uns["Pf2_A"] = correct_conditions(X)
+    # X.uns["Pf2_A"] = correct_conditions(X)
     X.uns["Pf2_A"] -= np.min(X.uns["Pf2_A"], axis=0)
     X.uns["Pf2_A"] += np.median(X.uns["Pf2_A"], axis=0)
     X.uns["Pf2_A"] = np.log(X.uns["Pf2_A"])
