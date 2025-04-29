@@ -22,6 +22,7 @@ dependencies = [
     "pacmap>=0.7.1",
     "leidenalg>=0.10.1",
     "tqdm>=4.66.1",
+    "cupy-cuda12x>=13.4",
     "tlviz>=0.1.1",
     "doubletdetection >=4.2",
     "statsmodels>=0.14.1",

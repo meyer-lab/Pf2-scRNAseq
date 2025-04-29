@@ -9,7 +9,6 @@ from anndata import read_h5ad, AnnData
 import anndata as an
 from .common import subplotLabel, getSetup
 from .commonFuncs.plotFactors import (
-    plot_condition_factors,
     plot_condition_factors_groups,
     plot_eigenstate_factors,
     plot_gene_factors,
@@ -35,31 +34,21 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    X= read_h5ad('/home/nicoleb/Heiser_minimal.h5ad')
-    #X = import_Heiser()
-    
-    #X = pf2(X, 15)
-    
-    #X.uns["Pf2_A"] = correct_conditions(X)
-    
-    
+    X = import_Heiser()
 
+    X = pf2(X, 100)
 
+    X.uns["Pf2_A"] = correct_conditions(X)
 
-    
-    
     stimulations = samples_only(X)["treatment"]
-    tumors = samples_only(X)["tumorType"]
+    tumors = samples_only(X)["expBatch"]
     print(stimulations)
-    
-    #plot_condition_factors(X, ax[0], stimulations, cond="sample_id", groupConditions=True)
-    plot_condition_factors_groups(X, ax[0], stimulations, tumors, cond="sample_id", groupConditions=True)
+
+    plot_condition_factors_groups(
+        X, ax[0], stimulations, tumors, cond="sample_id", groupConditions=True
+    )
     plot_eigenstate_factors(X, ax[1])
     plot_gene_factors(X, ax[2])
     plot_factor_weight(X, ax[3])
 
     return f
-
-
-
-
