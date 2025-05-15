@@ -4,8 +4,9 @@ Figure A4: Correlation Matrix
 
 import anndata
 import numpy as np
-import seaborn as sns
 import pandas as pd
+import seaborn as sns
+
 from .common import getSetup
 
 

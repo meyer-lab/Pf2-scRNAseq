@@ -2,10 +2,10 @@
 Cell type percentage per Leiden cluster per condition
 """
 
-from anndata import read_h5ad
-from ..imports import import_Heiser
-from .common import subplotLabel, getSetup
 import seaborn as sns
+
+from ..imports import import_Heiser
+from .common import getSetup, subplotLabel
 from .commonFuncs.plotGeneral import cell_count_perc_df
 
 
@@ -17,11 +17,8 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
 
-    
-   
     X = import_Heiser()
 
-    
     df = cell_count_perc_df(X, celltype="cell_type_1", grouping="expBatch")
 
     sns.barplot(

@@ -1,13 +1,12 @@
+import anndata
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import scanpy as sc
-from scipy.stats import ranksums
-import anndata
-from matplotlib.axes import Axes
-from ...factorization import pf2_pca_r2x
-import matplotlib.pyplot as plt
 import scipy.sparse
+import seaborn as sns
+from matplotlib.axes import Axes
+
+from ...factorization import pf2_pca_r2x
 
 
 def plot_r2x(data, rank_vec, ax: Axes):

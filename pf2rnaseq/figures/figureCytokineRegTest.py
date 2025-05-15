@@ -1,17 +1,17 @@
-
 """FMS score for different regularization parameters"""
+
 import anndata
 import numpy as np
 import pandas as pd
-import scanpy as sc
 import seaborn as sns
+import wandb
 from matplotlib.axes import Axes
 from tensorly.cp_tensor import CPTensor
 from tlviz.factor_tools import factor_match_score as fms
-import wandb
+
 from ..factorization import pf2, pf2_pca_r2x
-from .common import getSetup, subplotLabel
 from ..imports import import_cytokine
+from .common import getSetup, subplotLabel
 
 run = wandb.init(
     # Set the wandb entity where your project will be logged (generally your team name).
@@ -21,10 +21,8 @@ run = wandb.init(
     # Track hyperparameters and run metadata.
     config={
         "rank": 20,
-        
     },
 )
-
 
 
 def makeFigure():
@@ -33,10 +31,8 @@ def makeFigure():
 
     X = import_cytokine()
     lambdaList = [5e-6, 1e-5, 5e-5, 1e-4]
-    rank=np.arange(1, 31, 5)
+    rank = np.arange(1, 31, 5)
     plot_fms_diff_reg(X, ax[0], 20, lambdaList, runs=3)
-
-    
 
     return f
 
@@ -76,22 +72,23 @@ def plot_fms_diff_reg(
     regsList: list[float],
     runs: int,
 ):
-    #Plots FMS when using different regularization params
+    # Plots FMS when using different regularization params
     fmsLists = []
 
     for j in range(0, runs, 1):
         scores = []
         for r in rank:
             for i in regsList:
-                dataX = pf2(X, rank=r, random_state=j, doEmbedding=False,regParam=i)
+                dataX = pf2(X, rank=r, random_state=j, doEmbedding=False, regParam=i)
 
-                sampledX = pf2(resample(X), rank=r, random_state=j, doEmbedding=False, regParam=i)
+                sampledX = pf2(
+                    resample(X), rank=r, random_state=j, doEmbedding=False, regParam=i
+                )
                 r2xError = pf2_pca_r2x(dataX, r)
                 fmsScore = calculateFMS(dataX, sampledX)
                 scores.append(fmsScore)
-                run.log({"fms": fmsScore,"regParam": i,"rank": r, "R2X": r2xError})
+                run.log({"fms": fmsScore, "regParam": i, "rank": r, "R2X": r2xError})
             fmsLists.append(scores)
-        
 
     runsList_df = []
     for i in range(0, runs):
@@ -114,4 +111,3 @@ def plot_fms_diff_reg(
     run.finish()
     sns.lineplot(data=df, x="Parameter", y="FMS", ax=ax)
     ax.set_ylim(0, 1)
-

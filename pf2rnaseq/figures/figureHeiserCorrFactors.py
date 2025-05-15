@@ -2,14 +2,15 @@
 Figure A8:
 """
 
-import numpy as np
-import seaborn as sns
-import pandas as pd
-from matplotlib.axes import Axes
 import anndata
-from .common import subplotLabel, getSetup
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib.axes import Axes
 
+from .common import getSetup, subplotLabel
 from .figureHeiserCorrelation import partial_correlation_matrix
+
 # from ..data_import import condition_factors_meta
 # from .commonFuncs.plotGeneral import bal_combine_bo_covid
 
@@ -88,7 +89,7 @@ def plot_pair_wp(
     df = df.sample(frac=frac)
 
     sns.scatterplot(data=df, x=f"Cmp. {cmp1}", y=f"Cmp. {cmp2}", ax=ax, color="k")
-    ax.set(title=f"WP {frac*100}% of Cells")
+    ax.set(title=f"WP {frac * 100}% of Cells")
 
 
 def remove_low_pc_cmp(pc_df: pd.DataFrame, abs_threshold=0.4):

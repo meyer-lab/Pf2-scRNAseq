@@ -92,8 +92,6 @@ igraph==0.11.6
     # via leidenalg
     # via louvain
     # via scib
-importlib-metadata==8.5.0
-    # via dask
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
@@ -384,7 +382,6 @@ traitlets==5.14.3
     # via jupyter-core
     # via matplotlib-inline
 typing-extensions==4.12.2
-    # via ipython
     # via pydantic
     # via pydantic-core
     # via typing-inspection
@@ -410,5 +407,3 @@ wrapt==1.16.0
 xarray==2024.9.0
     # via datashader
     # via tlviz
-zipp==3.20.2
-    # via importlib-metadata

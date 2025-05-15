@@ -2,13 +2,9 @@
 Plotting the R2X
 """
 
-import pandas as pd
-from anndata import read_h5ad
-from .common import subplotLabel, getSetup
-from .commonFuncs.plotGeneral import plot_r2x
-from ..factorization import correct_conditions
 from ..imports import import_Heiser
-from ..factorization import pf2
+from .common import getSetup, subplotLabel
+from .commonFuncs.plotGeneral import plot_r2x
 
 
 def makeFigure():
