@@ -77,4 +77,4 @@ select = [
     # Unused arguments
     "ARG",
 ]
-factor = "pf2rnaseq.imports:factorSave"
+

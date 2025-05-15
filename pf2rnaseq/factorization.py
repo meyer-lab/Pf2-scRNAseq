@@ -40,7 +40,7 @@ def pf2(
     regParam=0.0,
     r2x=False,
 ):
-    cupy.cuda.Device(1).use()
+    cupy.cuda.Device(0).use()
     pf_out, R2X = parafac2_nd(
         X,
         rank=rank,

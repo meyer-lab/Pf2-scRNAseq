@@ -34,11 +34,12 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
+    X = import_Heiser(deviance=True)
 
-    X=read_h5ad("/home/nicoleb/'C3TAg_50")
-    
+    X = pf2(X, 30)
 
-    
+    X.uns["Pf2_A"] = correct_conditions(X)
+
     stimulations = samples_only(X)["treatment"]
     tumors = samples_only(X)["expBatch"]
     print(stimulations)

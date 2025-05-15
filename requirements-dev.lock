@@ -45,6 +45,7 @@ coverage==7.6.1
     # via pytest-cov
 cupy-cuda12x==13.4.0
     # via parafac2
+    # via pf2rnaseq
 cycler==0.12.1
     # via matplotlib
 dask==2024.9.0

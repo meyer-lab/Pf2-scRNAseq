@@ -46,7 +46,22 @@ def ds_show(result, ax):
 
 def plot_gene_pacmap(gene: str, decompType: str, X: anndata.AnnData, ax: Axes):
     """Scatterplot of PaCMAP visualization weighted by gene"""
+
+    if gene not in X.var_names:
+        ax.text(
+            0.5,
+            0.5,
+            f"Gene '{gene}' not found in dataset",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+        )
+        print(
+            f"ERROR: Gene '{gene}' not found. Available genes include: {list(X.var_names[:5])}..."
+        )
+        return ax
     geneList = X[:, gene].X
+
     if isinstance(geneList, spmatrix):
         geneList = geneList.toarray()
 

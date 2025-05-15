@@ -4,10 +4,53 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 import anndata
 import scanpy as sc
-from scipy.sparse import spmatrix, csr_matrix, issparse
+from scipy.sparse import spmatrix, csr_matrix, issparse, csr_array
 from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
 import pandas as pd
 import os
+
+
+def prepare_dataset_deviance(
+    X: anndata.AnnData, condition_name, geneThreshold
+) -> anndata.AnnData:
+    X.X = csr_array(X.X)  # type: ignore
+    assert np.amin(X.X.data) >= 0.0
+
+    # Remove cells and genes with fewer than 10 reads
+    # X = X[X.X.sum(axis=1) > 10, X.X.sum(axis=0) > 10]
+    readmean, _ = mean_variance_axis(X.X, axis=0)  # type: ignore
+    X = X[:, readmean > geneThreshold]
+
+    # Copy so that the subsetting is preserved
+    X._init_as_actual(X.copy())
+
+    # deviance transform
+    y_ij = X.X.toarray()  # type: ignore
+
+    # counts per cell
+    n_i = y_ij.sum(axis=1)
+
+    # MLE of gene expression
+    pi_j = y_ij.sum(axis=0) / np.sum(n_i)
+
+    non_y_ij = n_i[:, None] - y_ij
+    mu_ij = n_i[:, None] * pi_j[None, :]
+    signs = np.sign(y_ij - pi_j[None, :])
+
+    first_term = 2 * y_ij * np.log(np.maximum(y_ij, 1.0) / mu_ij)
+    second_term = 2 * non_y_ij * np.log(non_y_ij / (n_i[:, None] - mu_ij))
+
+    X.X = signs * np.sqrt(np.maximum(first_term + second_term, 0.0))
+    _, sgIndex = np.unique(X.obs_vector(condition_name), return_inverse=True)
+    X.obs["condition_unique_idxs"] = sgIndex
+    X.obs["condition_unique_idxs"] = X.obs["condition_unique_idxs"].astype("category")
+
+    # Pre-calculate gene means
+    means, _ = mean_variance_axis(csr_matrix(X.X), axis=0)  # type: ignore
+    X.var["means"] = means
+
+    assert np.all(np.isfinite(X.X))  # type: ignore
+    return X
 
 
 def prepare_dataset(
@@ -140,25 +183,34 @@ def import_pf2Cytokine30() -> anndata.AnnData:
     return X
 
 
-def import_Heiser() -> anndata.AnnData:
+def import_Heiser(deviance=False) -> anndata.AnnData:
     """Import Heiser C3TAg dataset.
     anndata.X is the raw counts
 
     """
     data = anndata.read_h5ad("/home/nicoleb/C3TAg.h5ad")
-
-    return prepare_dataset(data, "sample_id", geneThreshold=0.01)
+    if deviance:
+        return prepare_dataset_deviance(data, "sample_id", geneThreshold=0.01)
+    else:
+        return prepare_dataset(data, "sample_id", geneThreshold=0.01)
 
 
 def import_MouseImmune() -> anndata.AnnData:
-    """Import cytokine data including gene expression and hashtag information.
-    Processes files with naming patterns like:
-    - GSM6102842_cytokine-samples07-barcodes.tsv.gz
-    - GSM6102885_cytokine-hashtags06-matrix.mtx.gz
+    """Import Mouse Immune Dictionary cytokine data.
+     -- columns from observation data:
+    {'biosample_id': cytokine and replicate info,
+    'rep': replicate,
+    'species': mouse species,
+    'cytokine_family': cytokine family label,
+    'cyt': cytokine mouse was treated with,
+    'sex': sex of mouse,
+    'celltype': cell type label,
+    'organ__ontology_label': organ label,
+    ...}
     """
     X = anndata.read_h5ad("/home/nicoleb/MouseCytok.h5ad")
 
-    return prepare_dataset(X, "cyt", geneThreshold=0.1)  # 0.01
+    return prepare_dataset(X, "biosample_id", geneThreshold=0.1)  # 0.01
 
 
 def pseudobulk_lupus(X, cellType="Cell Type"):
