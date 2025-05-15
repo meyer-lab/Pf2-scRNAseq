@@ -17,11 +17,8 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
 
-    
-   
     X = import_Heiser()
 
-    
     df = cell_count_perc_df(X, celltype="cell_type_1", grouping="expBatch")
 
     sns.barplot(

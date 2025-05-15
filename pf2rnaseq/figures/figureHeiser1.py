@@ -35,10 +35,8 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
 
-    X=read_h5ad("/home/nicoleb/'C3TAg_50")
-    
+    X = read_h5ad("/home/nicoleb/'C3TAg_50")
 
-    
     stimulations = samples_only(X)["treatment"]
     tumors = samples_only(X)["expBatch"]
     print(stimulations)

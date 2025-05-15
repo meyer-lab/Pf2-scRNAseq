@@ -98,7 +98,6 @@ def makeFigure():
         # Get the component pair and correlation coefficient
         cmp1 = pc_abs_df.iloc[-(i + 1), 0]
         cmp2 = pc_abs_df.iloc[-(i + 1), 1]
-        
 
         # Pass to plotting functions
         plot_pair_gene_factors(X, cmp1, cmp2, ax[(3 * i)])
@@ -108,16 +107,13 @@ def makeFigure():
             cmp2,
             ax[(3 * i) + 1],
             label="treatment",
-           
         )
         plot_pair_wp(X, cmp1, cmp2, ax[(3 * i) + 2], frac=0.001)
 
     return f
 
 
-def plot_pair_gene_factors(
-    X: anndata.AnnData, cmp1: int, cmp2: int, ax: Axes
-):
+def plot_pair_gene_factors(X: anndata.AnnData, cmp1: int, cmp2: int, ax: Axes):
     """Plots two gene components weights"""
     cmpWeights = np.concatenate(
         ([X.varm["Pf2_C"][:, cmp1 - 1]], [X.varm["Pf2_C"][:, cmp2 - 1]])
@@ -138,12 +134,7 @@ def plot_pair_cond_factors(
 
 
 def plot_pair_wp(
-    X: anndata.AnnData,
-    cmp1: int,
-    cmp2: int,
-    ax: Axes,
-    frac: float = 0.001
-    
+    X: anndata.AnnData, cmp1: int, cmp2: int, ax: Axes, frac: float = 0.001
 ):
     """Plots two weighted projections components weights"""
     cmpWeights = np.concatenate(
@@ -158,7 +149,7 @@ def plot_pair_wp(
     df = df.sample(frac=frac)
 
     sns.scatterplot(data=df, x=f"Cmp. {cmp1}", y=f"Cmp. {cmp2}", ax=ax, color="k")
-    ax.set(title=f"WP {frac*100}% of Cells")
+    ax.set(title=f"WP {frac * 100}% of Cells")
 
 
 def remove_low_pc_cmp(pc_df: pd.DataFrame, abs_threshold=0.4):
