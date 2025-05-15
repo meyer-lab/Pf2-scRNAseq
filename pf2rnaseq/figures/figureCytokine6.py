@@ -3,11 +3,9 @@ Plots pacmap for a single component
 """
 
 from anndata import read_h5ad
-from ..imports import import_cytokine,import_pf2Cytokine30 
-from .common import subplotLabel, getSetup
+
+from .common import getSetup, subplotLabel
 from .commonFuncs.plotPaCMAP import plot_wp_pacmap
-import seaborn as sns
-from .commonFuncs.plotGeneral import cell_count_perc_df
 
 
 def makeFigure():
@@ -20,7 +18,7 @@ def makeFigure():
 
     X = read_h5ad("/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad")
 
-    cmp=16
+    cmp = 16
 
     plot_wp_pacmap(X, cmp, ax[0], 1.0)
 

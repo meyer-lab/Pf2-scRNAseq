@@ -2,9 +2,10 @@
 CITEseq: Cell type percentage per Leiden cluster per condition
 """
 
-from anndata import read_h5ad
-from .common import subplotLabel, getSetup
 import seaborn as sns
+from anndata import read_h5ad
+
+from .common import getSetup, subplotLabel
 from .commonFuncs.plotGeneral import cell_count_perc_df
 
 

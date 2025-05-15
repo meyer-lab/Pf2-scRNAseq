@@ -1,5 +1,5 @@
 """
-factorization score 
+factorization score
 """
 
 import anndata
@@ -12,9 +12,8 @@ from tensorly.cp_tensor import CPTensor
 from tlviz.factor_tools import factor_match_score as fms
 
 from ..factorization import pf2
-from .common import getSetup, subplotLabel
-
 from ..imports import import_cytokine
+from .common import getSetup, subplotLabel
 
 
 def makeFigure():
@@ -59,7 +58,7 @@ def plot_fms_percent_drop(
     runs: int,
     rank: int = 35,
 ):
-  #Plots FMS score when percentage is removed from data
+    # Plots FMS score when percentage is removed from data
     dataX = pf2(X, rank, doEmbedding=False)
 
     fmsLists = []
@@ -114,7 +113,7 @@ def plot_fms_diff_ranks(
     ranksList: list[int],
     runs: int,
 ):
-    #Plots FMS when using different Pf2 components
+    # Plots FMS when using different Pf2 components
     fmsLists = []
 
     for j in range(0, runs, 1):

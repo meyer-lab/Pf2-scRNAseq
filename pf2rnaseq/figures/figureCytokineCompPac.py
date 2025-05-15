@@ -2,19 +2,14 @@
 Weighted projections per component in PaCMAP and boxplot
 """
 
-import pandas as pd
 import numpy as np
-from .common import subplotLabel, getSetup
 from anndata import read_h5ad
-from .commonFuncs.plotPaCMAP import (
-    plot_wp_per_celltype,
-    plot_wp_pacmap,
-   
-)
-from ..factorization import correct_conditions
-from ..imports import import_cytokine,import_pf2Cytokine30 
-from ..factorization import pf2
 
+from .common import getSetup, subplotLabel
+from .commonFuncs.plotPaCMAP import (
+    plot_wp_pacmap,
+    plot_wp_per_celltype,
+)
 
 
 def makeFigure():
@@ -24,16 +19,13 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-   
-    X = read_h5ad("/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad")
-   #X = import_cytokine()
-   #X = pf2(X, 30, tolerance=1e-6)
-    #X.uns["Pf2_A"] = correct_conditions(X)
-    
-    
 
-    
-    comps = np.arange(1,31)
+    X = read_h5ad("/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad")
+    # X = import_cytokine()
+    # X = pf2(X, 30, tolerance=1e-6)
+    # X.uns["Pf2_A"] = correct_conditions(X)
+
+    comps = np.arange(1, 31)
 
     for i, cmp in enumerate(comps):
         plot_wp_per_celltype(X, cmp, ax[2 * i], cellType="CellType2")

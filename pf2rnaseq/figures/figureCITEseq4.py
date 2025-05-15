@@ -3,9 +3,10 @@ CITEseq: Highly weighted genes per component
 """
 
 from anndata import read_h5ad
+
 from .common import (
-    subplotLabel,
     getSetup,
+    subplotLabel,
 )
 from .commonFuncs.plotFactors import plot_gene_factors_partial
 

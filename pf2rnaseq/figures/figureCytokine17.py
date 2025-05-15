@@ -1,13 +1,13 @@
-"""plotting average gene expression cell types"""  
+"""plotting average gene expression cell types"""
 
 import anndata
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.axes import Axes
 from anndata import read_h5ad
-from .common import getSetup, subplotLabel
+from matplotlib.axes import Axes
 
+from .common import getSetup, subplotLabel
 
 
 def makeFigure():
@@ -17,12 +17,11 @@ def makeFigure():
 
     X = read_h5ad("/home/nicoleb/Cytokine_Pf2_annotated_NB_031725.h5ad")
 
+    immune_suppressive = ["FOXP3", "TIGIT"]
 
-    immune_suppressive = ["FOXP3","TIGIT"]  
-
-    plot_avegene_per_status_per_cluster( X, "CTLA4", ax[0], clusterName1='CD4 T', cellType="CellType2" )
-
-    
+    plot_avegene_per_status_per_cluster(
+        X, "CTLA4", ax[0], clusterName1="CD4 T", cellType="CellType2"
+    )
 
     return f
 
@@ -39,13 +38,13 @@ def plot_avegene_per_status_per_cluster(
     genesV = X[:, gene]
     dataDF = genesV.to_df()
     dataDF = dataDF.subtract(genesV.var["means"].values)
-    
+
     dataDF["Condition"] = genesV.obs["Condition"].values
     dataDF["Cell Type"] = genesV.obs[cellType].values
 
-    df = pd.melt(
-        dataDF, id_vars=["Cell Type", "Condition"], value_vars=gene
-    ).rename(columns={"variable": "Gene", "value": "Value"})
+    df = pd.melt(dataDF, id_vars=["Cell Type", "Condition"], value_vars=gene).rename(
+        columns={"variable": "Gene", "value": "Value"}
+    )
 
     df = df.groupby(["Cell Type", "Gene", "Condition"], observed=False).mean()
     df = df.rename(columns={"Value": "Average Gene Expression"}).reset_index()

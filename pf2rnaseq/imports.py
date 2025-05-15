@@ -1,13 +1,13 @@
 import glob
-from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
-import numpy as np
+from pathlib import Path
+
 import anndata
-import scanpy as sc
-from scipy.sparse import spmatrix, csr_matrix, issparse
-from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
+import numpy as np
 import pandas as pd
-import os
+import scanpy as sc
+from scipy.sparse import csr_matrix, spmatrix
+from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
 
 
 def prepare_dataset(

@@ -3,9 +3,10 @@ CITEseq: Weighted projections per component in PaCMAP and boxplot
 """
 
 from anndata import read_h5ad
+
 from .common import (
-    subplotLabel,
     getSetup,
+    subplotLabel,
 )
 from .commonFuncs.plotPaCMAP import plot_wp_pacmap, plot_wp_per_celltype
 

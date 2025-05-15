@@ -3,18 +3,19 @@ CITEseq: Pf2 factors, weights, PaCMAP labeled by all conditions/leiden clusters,
 and ratio of condition components based on days
 """
 
+import anndata
+import numpy as np
 from anndata import read_h5ad
 from matplotlib.axes import Axes
-import anndata
-from .common import subplotLabel, getSetup
+
+from .common import getSetup, subplotLabel
 from .commonFuncs.plotFactors import (
     plot_condition_factors,
     plot_eigenstate_factors,
-    plot_gene_factors,
     plot_factor_weight,
+    plot_gene_factors,
 )
 from .commonFuncs.plotPaCMAP import plot_labels_pacmap
-import numpy as np
 
 
 def makeFigure():

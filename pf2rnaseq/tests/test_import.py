@@ -2,13 +2,10 @@
 Test the cross validation accuracy.
 """
 
-import pytest
 import numpy as np
-from ..imports import (
-    import_citeseq,
-    import_HTAN,
-    import_CCLE
-)
+import pytest
+
+from ..imports import import_CCLE, import_citeseq, import_HTAN
 
 
 @pytest.mark.parametrize(
