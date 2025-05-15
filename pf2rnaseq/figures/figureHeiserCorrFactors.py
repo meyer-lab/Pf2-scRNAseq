@@ -2,14 +2,15 @@
 Figure A8:
 """
 
-import numpy as np
-import seaborn as sns
-import pandas as pd
-from matplotlib.axes import Axes
 import anndata
-from .common import subplotLabel, getSetup
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib.axes import Axes
 
+from .common import getSetup, subplotLabel
 from .figureHeiserCorrelation import partial_correlation_matrix
+
 # from ..data_import import condition_factors_meta
 # from .commonFuncs.plotGeneral import bal_combine_bo_covid
 
@@ -122,7 +123,7 @@ def plot_pair_gene_factors(X: anndata.AnnData, cmp1: int, cmp2: int, ax: Axes):
         data=cmpWeights.transpose(), columns=[f"Cmp. {cmp1}", f"Cmp. {cmp2}"]
     )
     sns.scatterplot(data=df, x=f"Cmp. {cmp1}", y=f"Cmp. {cmp2}", ax=ax, color="k")
-    ax.set(title=f"Gene Factors")
+    ax.set(title="Gene Factors")
 
 
 def plot_pair_cond_factors(
@@ -130,7 +131,7 @@ def plot_pair_cond_factors(
 ):
     """Plots two condition components weights"""
     sns.scatterplot(data=df, x=f"Cmp. {cmp1}", y=f"Cmp. {cmp2}", hue=label, ax=ax)
-    ax.set(title=f"Condition Factors")
+    ax.set(title="Condition Factors")
 
 
 def plot_pair_wp(

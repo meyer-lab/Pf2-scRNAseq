@@ -1,12 +1,9 @@
 "Plot cell lineage pacmap"
 
-import pandas as pd
 from anndata import read_h5ad
-from .common import subplotLabel, getSetup
-from .commonFuncs.plotPaCMAP import plot_labels_pacmap
-from ..factorization import correct_conditions
 
-from ..factorization import pf2
+from .common import getSetup, subplotLabel
+from .commonFuncs.plotPaCMAP import plot_labels_pacmap
 
 
 def makeFigure():

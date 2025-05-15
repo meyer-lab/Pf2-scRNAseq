@@ -12,9 +12,8 @@ from tensorly.cp_tensor import CPTensor
 from tlviz.factor_tools import factor_match_score as fms
 
 from ..factorization import pf2
-from .common import getSetup, subplotLabel
-
 from ..imports import import_Heiser
+from .common import getSetup, subplotLabel
 
 
 def makeFigure():

@@ -3,11 +3,9 @@ Heiser: Highly weighted genes per component
 """
 
 from anndata import read_h5ad
+
 from .common import getSetup
 from .commonFuncs.plotFactors import plot_gene_factors_partial
-from ..imports import import_Heiser
-from ..factorization import correct_conditions
-from ..factorization import pf2
 
 
 def makeFigure():

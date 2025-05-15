@@ -2,18 +2,15 @@
 Weighted projections per component in PaCMAP and boxplot of cell types
 """
 
-import pandas as pd
 
 import numpy as np
-from .common import subplotLabel, getSetup
 from anndata import read_h5ad
+
+from .common import getSetup, subplotLabel
 from .commonFuncs.plotPaCMAP import (
-    plot_wp_per_celltype,
     plot_wp_pacmap,
+    plot_wp_per_celltype,
 )
-from ..factorization import correct_conditions
-from ..imports import import_Heiser
-from ..factorization import pf2
 
 
 def makeFigure():

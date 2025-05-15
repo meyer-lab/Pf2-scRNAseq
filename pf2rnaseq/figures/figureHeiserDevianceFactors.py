@@ -3,20 +3,16 @@ Heiser: Plotting factors
 """
 
 import pandas as pd
-import numpy as np
-import scipy.sparse as sp
-from anndata import read_h5ad, AnnData
-import anndata as an
-from .common import subplotLabel, getSetup
+
+from ..factorization import correct_conditions, pf2
+from ..imports import import_Heiser
+from .common import getSetup, subplotLabel
 from .commonFuncs.plotFactors import (
     plot_condition_factors_groups,
     plot_eigenstate_factors,
-    plot_gene_factors,
     plot_factor_weight,
+    plot_gene_factors,
 )
-from ..factorization import correct_conditions
-from ..imports import import_Heiser
-from ..factorization import pf2
 
 
 def samples_only(X) -> pd.DataFrame:
