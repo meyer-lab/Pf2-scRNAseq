@@ -1,13 +1,13 @@
 import glob
-from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
-import numpy as np
+from pathlib import Path
+
 import anndata
-import scanpy as sc
-from scipy.sparse import spmatrix, csr_matrix, issparse, csr_array
-from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
+import numpy as np
 import pandas as pd
-import os
+import scanpy as sc
+from scipy.sparse import csr_array, csr_matrix, spmatrix
+from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
 
 
 def prepare_dataset_deviance(
@@ -35,7 +35,7 @@ def prepare_dataset_deviance(
 
     non_y_ij = n_i[:, None] - y_ij
     mu_ij = n_i[:, None] * pi_j[None, :]
-    signs = np.sign(y_ij - pi_j[None, :])
+    signs = np.sign(y_ij - mu_ij[None, :])
 
     first_term = 2 * y_ij * np.log(np.maximum(y_ij, 1.0) / mu_ij)
     second_term = 2 * non_y_ij * np.log(non_y_ij / (n_i[:, None] - mu_ij))
@@ -46,8 +46,7 @@ def prepare_dataset_deviance(
     X.obs["condition_unique_idxs"] = X.obs["condition_unique_idxs"].astype("category")
 
     # Pre-calculate gene means
-    means, _ = mean_variance_axis(csr_matrix(X.X), axis=0)  # type: ignore
-    X.var["means"] = means
+    X.var["means"] = np.zeros(X.shape[1])
 
     assert np.all(np.isfinite(X.X))  # type: ignore
     return X
