@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 from scipy.sparse import csr_array, csr_matrix, spmatrix
+from sklearn.preprocessing import scale
 from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
 
 
@@ -35,12 +36,15 @@ def prepare_dataset_deviance(
 
     non_y_ij = n_i[:, None] - y_ij
     mu_ij = n_i[:, None] * pi_j[None, :]
-    signs = np.sign(y_ij - mu_ij[None, :])
+    signs = np.sign(y_ij - mu_ij)
 
     first_term = 2 * y_ij * np.log(np.maximum(y_ij, 1.0) / mu_ij)
     second_term = 2 * non_y_ij * np.log(non_y_ij / (n_i[:, None] - mu_ij))
 
     X.X = signs * np.sqrt(np.maximum(first_term + second_term, 0.0))
+
+    X.X = scale(X.X)
+
     _, sgIndex = np.unique(X.obs_vector(condition_name), return_inverse=True)
     X.obs["condition_unique_idxs"] = sgIndex
     X.obs["condition_unique_idxs"] = X.obs["condition_unique_idxs"].astype("category")
@@ -187,9 +191,9 @@ def import_Heiser(deviance=False) -> anndata.AnnData:
     anndata.X is the raw counts
 
     """
-    data = anndata.read_h5ad("/home/nicoleb/C3TAg.h5ad")
+    data = anndata.read_h5ad("/home/asm/Pf2-scRNAseq/C3TAg.h5ad")
     if deviance:
-        return prepare_dataset_deviance(data, "sample_id", geneThreshold=0.01)
+        return prepare_dataset_deviance(data, "sample_id", geneThreshold=0.1)
     else:
         return prepare_dataset(data, "sample_id", geneThreshold=0.01)
 
