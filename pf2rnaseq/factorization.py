@@ -1,13 +1,13 @@
-from pacmap import PaCMAP
-from sklearn.linear_model import LinearRegression
-from scipy.stats import gmean
-from parafac2.parafac2 import parafac2_nd, store_pf2
-from sklearn.decomposition import PCA
 import anndata
-import scipy.sparse as sps
-import numpy as np
-from tqdm import tqdm
 import cupy
+import numpy as np
+import scipy.sparse as sps
+from pacmap import PaCMAP
+from parafac2.parafac2 import parafac2_nd, store_pf2
+from scipy.stats import gmean
+from sklearn.decomposition import PCA
+from sklearn.linear_model import LinearRegression
+from tqdm import tqdm
 
 
 def correct_conditions(X: anndata.AnnData):
@@ -15,19 +15,14 @@ def correct_conditions(X: anndata.AnnData):
     # sgIndex = X.obs["condition_unique_idxs"]
     sgIndex = X.obs["condition_unique_idxs"].cat.codes
     counts = np.zeros((np.amax(sgIndex) + 1, 1))
-
     cond_mean = gmean(X.uns["Pf2_A"], axis=1)
-
     x_count = X.X.sum(axis=1)
-
     for ii in range(counts.size):
         counts[ii] = np.sum(x_count[X.obs["condition_unique_idxs"] == ii])
 
     lr = LinearRegression()
     lr.fit(counts, cond_mean.reshape(-1, 1))
-
     counts_correct = lr.predict(counts)
-
     return X.uns["Pf2_A"] / counts_correct
 
 
@@ -37,7 +32,6 @@ def pf2(
     random_state=1,
     doEmbedding: bool = True,
     tolerance=1e-9,
-    regParam=0.0,
     r2x=False,
 ):
     cupy.cuda.Device(0).use()
@@ -47,7 +41,6 @@ def pf2(
         random_state=random_state,
         tol=tolerance,
         n_iter_max=500,
-        l2=regParam,
     )
 
     X = store_pf2(X, pf_out)
