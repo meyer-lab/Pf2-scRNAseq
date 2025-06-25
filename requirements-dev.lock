@@ -42,13 +42,11 @@ coverage==7.6.1
     # via pytest-cov
 cupy-cuda12x==13.4.0
     # via parafac2
-    # via pf2rnaseq
 cycler==0.12.1
     # via matplotlib
 dask==2025.5.0
-    # via datashader
     # via pf2rnaseq
-datashader==0.16.3
+datashader==0.18.1
     # via pf2rnaseq
 debugpy==1.8.7
     # via ipykernel
@@ -201,7 +199,6 @@ patsy==0.5.6
 pexpect==4.9.0
     # via ipython
 pillow==10.4.0
-    # via datashader
     # via matplotlib
 platformdirs==4.3.6
     # via jupyter-core
