@@ -2,7 +2,7 @@
 Plotting the R2X
 """
 
-from ..imports import import_Heiser, import_MouseImmune
+from ..imports import import_Heiser
 from .common import getSetup, subplotLabel
 from .commonFuncs.plotGeneral import plot_r2x
 
@@ -14,13 +14,10 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    X = import_Heiser()
+    X = import_Heiser(deviance=True)
 
-    ranks = list(range(10, 101, 10))
-    plot_r2x(X, ranks, ax[0])
-    X = import_Heiser()
+    ranks = list(range(5, 51, 5))
 
-    ranks = list(range(1, 101))
     plot_r2x(X, ranks, ax[0])
 
     return f

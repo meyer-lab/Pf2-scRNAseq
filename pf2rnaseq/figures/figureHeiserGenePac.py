@@ -1,4 +1,4 @@
-"Plot gene pacmap"
+"""Plot gene pacmap"""
 
 from anndata import read_h5ad
 
@@ -14,7 +14,7 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
 
-    X = read_h5ad("/home/nicoleb/'C3TAg_50")
+    X = read_h5ad("/home/nicoleb/C3TAg_Pf2_30.h5ad")
 
     plot_gene_pacmap("Folr2", "Pf2", X, ax[0])
 

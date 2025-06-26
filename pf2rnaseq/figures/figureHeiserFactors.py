@@ -4,7 +4,8 @@ Heiser: Plotting factors
 
 import pandas as pd
 from anndata import read_h5ad
-
+from ..factorization import correct_conditions, pf2
+from ..imports import import_Heiser
 from .common import getSetup, subplotLabel
 from .commonFuncs.plotFactors import (
     plot_condition_factors_groups,
@@ -25,16 +26,14 @@ def samples_only(X) -> pd.DataFrame:
 def makeFigure():
     """Get a list of the axis objects and create a figure."""
     # Get list of axis objects
-    ax, f = getSetup((20, 20), (2, 2))
+    ax, f = getSetup((15, 20), (2, 2))
 
     # Add subplot labels
     subplotLabel(ax)
-
-    X = read_h5ad("/home/nicoleb/'C3TAg_50")
-
+    X = read_h5ad("/home/nicoleb/C3TAg_Pf2_30.h5ad")
+    X.uns["Pf2_A"] = correct_conditions(X)
     stimulations = samples_only(X)["treatment"]
     tumors = samples_only(X)["expBatch"]
-    print(stimulations)
 
     plot_condition_factors_groups(
         X, ax[0], stimulations, tumors, cond="sample_id", groupConditions=True
