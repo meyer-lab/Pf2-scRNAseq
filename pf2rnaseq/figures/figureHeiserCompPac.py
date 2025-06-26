@@ -20,7 +20,7 @@ def makeFigure():
 
     # Add subplot labels
     subplotLabel(ax)
-    X = read_h5ad("/home/nicoleb/'C3TAg_50")
+    X = read_h5ad("/home/nicoleb/C3TAg_50")
     # X = import_Heiser()
     # X = pf2(X, 30)
     # X.uns["Pf2_A"] = correct_conditions(X)
