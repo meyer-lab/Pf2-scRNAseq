@@ -14,7 +14,7 @@ def makeFigure():
     # Add subplot labels
     subplotLabel(ax)
     # X = read_h5ad("/home/nicoleb/C3TAg_Pf2_30.h5ad")
-    X = read_h5ad("/home/nicoleb/'C3TAg_50")
+    X = read_h5ad("/home/nicoleb/C3TAg_50")
 
     plot_labels_pacmap(X, "lineage", ax[0])
     # plot_labels_pacmap(X, "sc_lineage", ax[0])
