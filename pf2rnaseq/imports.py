@@ -7,7 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pandas as pd
 import scanpy as sc
 from scipy.sparse import csr_array, csr_matrix, spmatrix
 from sklearn.preprocessing import scale
