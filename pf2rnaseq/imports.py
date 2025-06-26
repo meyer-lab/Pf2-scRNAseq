@@ -5,7 +5,6 @@ from pathlib import Path
 import anndata
 from pathlib import Path
 
-import anndata
 import numpy as np
 import pandas as pd
 import pandas as pd
