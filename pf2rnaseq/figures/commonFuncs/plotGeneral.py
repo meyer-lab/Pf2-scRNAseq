@@ -5,10 +5,8 @@ import scanpy as sc
 import scipy.sparse
 import seaborn as sns
 from matplotlib.axes import Axes
-from tensorly.cp_tensor import CPTensor
-from tlviz.factor_tools import factor_match_score as fms
 
-from ...factorization import pf2, pf2_pca_r2x
+from ...factorization import fms_percent_drop, pf2_pca_r2x
 
 
 def plot_r2x(data, rank_vec, ax: Axes):
@@ -444,117 +442,22 @@ def plot_boxplot_gene_celltype(
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=45)
 
 
-def calculateFMS(A: anndata.AnnData, B: anndata.AnnData):
-    """Calculates FMS between 2 factors"""
-    factors = [A.uns["Pf2_A"], A.uns["Pf2_B"], A.varm["Pf2_C"]]
-    A_CP = CPTensor(
-        (
-            A.uns["Pf2_weights"],
-            factors,
-        )
-    )
-
-    factors = [B.uns["Pf2_A"], B.uns["Pf2_B"], B.varm["Pf2_C"]]
-    B_CP = CPTensor(
-        (
-            B.uns["Pf2_weights"],
-            factors,
-        )
-    )
-
-    return fms(A_CP, B_CP, consider_weights=False, skip_mode=1)  # type: ignore
-
-
-def plot_fms_percent_drop(
-    X: anndata.AnnData,
-    ax: Axes,
-    percentList: np.ndarray,
-    runs: int,
-    rank: int = 30,
-):
-    # Plots FMS score when percentage is removed from data
-    dataX = pf2(X, rank, doEmbedding=False)
-
-    fmsLists = []
-
-    for j in range(0, runs, 1):
-        scores = [1.0]
-
-        for i in percentList[1:]:
-            sampled_data: anndata.AnnData = sc.pp.subsample(
-                X, fraction=1 - (i / 100), random_state=j, copy=True
-            )  # type: ignore
-            sampledX = pf2(sampled_data, rank, random_state=j + 2, doEmbedding=False)
-
-            fmsScore = calculateFMS(dataX, sampledX)
-            scores.append(fmsScore)
-
-        fmsLists.append(scores)
-
-    runsList_df = []
-    for i in range(0, runs):
-        for j in range(0, len(percentList)):
-            runsList_df.append(i)
-    percentList_df = []
-    for i in range(0, runs):
-        for j in range(0, len(percentList)):
-            percentList_df.append(percentList[j])
-    fmsList_df = []
-    for sublist in fmsLists:
-        fmsList_df += sublist
-    df = pd.DataFrame(
-        {
-            "Run": runsList_df,
-            "Percentage of Data Dropped": percentList_df,
-            "FMS": fmsList_df,
-        }
-    )
-
-    sns.lineplot(data=df, x="Percentage of Data Dropped", y="FMS", ax=ax)
-    ax.set_ylim(0, 1)
-
-
-def resample(data: anndata.AnnData) -> anndata.AnnData:
-    """Bootstrapping dataset"""
-    indices = np.random.randint(0, data.shape[0], size=(data.shape[0],))
-    data = data[indices].copy()
-    return data
-
-
 def plot_fms_diff_ranks(
     X: anndata.AnnData,
     ax: Axes,
     ranksList: list[int],
-    runs: int,
+    runs=3,
 ):
-    # Plots FMS when using different Pf2 components
-    fmsLists = []
-
-    for j in range(0, runs, 1):
-        scores = []
-        for i in ranksList:
-            dataX = pf2(X, rank=i, random_state=j, doEmbedding=False)
-
-            sampledX = pf2(resample(X), rank=i, random_state=j, doEmbedding=False)
-
-            fmsScore = calculateFMS(dataX, sampledX)
-            scores.append(fmsScore)
-        fmsLists.append(scores)
-
-    runsList_df = []
-    for i in range(0, runs):
-        for j in range(0, len(ranksList)):
-            runsList_df.append(i)
-    ranksList_df = []
-    for i in range(0, runs):
-        for j in range(0, len(ranksList)):
-            ranksList_df.append(ranksList[j])
-    fmsList_df = []
-    for sublist in fmsLists:
-        fmsList_df += sublist
-    df = pd.DataFrame(
-        {"Run": runsList_df, "Component": ranksList_df, "FMS": fmsList_df}
-    )
-
+    """Plots FMS when using different Pf2 components"""
+    df = plot_fms_diff_ranks(X, ranksList, runs)
     sns.lineplot(data=df, x="Component", y="FMS", ax=ax)
+    ax.set_ylim(0, 1)
+
+
+def plot_fms_percent_drop(
+    X: anndata.AnnData, ax: Axes, percentList: np.ndarray, runs=3, rank: int = 30
+):
+    """Plots FMS when dropping different percentages of data"""
+    df = fms_percent_drop(X, percentList, runs, rank)
+    sns.lineplot(data=df, x="Percentage of Data Dropped", y="FMS", ax=ax)
     ax.set_ylim(0, 1)
