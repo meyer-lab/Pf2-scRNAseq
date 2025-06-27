@@ -6,7 +6,7 @@ import scipy.sparse
 import seaborn as sns
 from matplotlib.axes import Axes
 
-from ...factorization import pf2_pca_r2x
+from ...factorization import fms_percent_drop, pf2_pca_r2x, fms_diff_ranks
 
 
 def plot_r2x(data, rank_vec, ax: Axes):
@@ -439,3 +439,24 @@ def plot_boxplot_gene_celltype(
     ax.set(title=gene)
     ax.set_xticks(ax.get_xticks())
     ax.set_xticklabels(labels=ax.get_xticklabels(), rotation=45)
+
+
+def plot_fms_diff_ranks(
+    X: anndata.AnnData,
+    ax: Axes,
+    ranksList: list[int],
+    runs=3,
+):
+    """Plots FMS when using different Pf2 components"""
+    df = fms_diff_ranks(X, ranksList, runs)
+    sns.lineplot(data=df, x="Component", y="FMS", ax=ax)
+    ax.set_ylim(0, 1)
+
+
+def plot_fms_percent_drop(
+    X: anndata.AnnData, ax: Axes, percentList: np.ndarray, runs=3, rank: int = 30
+):
+    """Plots FMS when dropping different percentages of data"""
+    df = fms_percent_drop(X, percentList, runs, rank)
+    sns.lineplot(data=df, x="Percentage of Data Dropped", y="FMS", ax=ax)
+    ax.set_ylim(0, 1)
