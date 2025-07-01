@@ -134,12 +134,11 @@ def import_Heiser(deviance=False) -> anndata.AnnData:
     data = anndata.read_h5ad("/home/nicoleb/C3TAg.h5ad")
     if deviance:
         # Apply deviance transformation
-        data = prepare_dataset_deviance(data, "sample_id", geneThreshold=0.1)
+        return prepare_dataset_deviance(data, "sample_id", geneThreshold=0.1)
     else:
         # Apply standard normalization and scaling
-        data = prepare_dataset(data, "sample_id", geneThreshold=0.1)
+        return prepare_dataset(data, "sample_id", geneThreshold=0.1)
 
-    return prepare_dataset(data, "sample_id", geneThreshold=0.1)
 
 
 def import_MouseImmune() -> anndata.AnnData:
