@@ -43,9 +43,8 @@ cupy-cuda12x==13.4.0
 cycler==0.12.1
     # via matplotlib
 dask==2025.5.0
-    # via datashader
     # via pf2rnaseq
-datashader==0.16.3
+datashader==0.18.1
     # via pf2rnaseq
 debugpy==1.8.7
     # via ipykernel
@@ -122,14 +121,14 @@ nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.3
     # via scanpy
-numba==0.61.0
+numba==0.61.2
     # via datashader
     # via fast-array-utils
     # via pacmap
     # via pynndescent
     # via scanpy
     # via umap-learn
-numpy==2.1.3
+numpy==2.2.6
     # via anndata
     # via contourpy
     # via cupy-cuda12x
@@ -178,7 +177,7 @@ pandas==2.2.2
     # via statsmodels
     # via tlviz
     # via xarray
-parafac2 @ git+https://github.com/meyer-lab/parafac2.git@6f7c98e33bd35ef5cc23ffe71d1d10d5442ecfd2
+parafac2 @ git+https://github.com/meyer-lab/parafac2.git@ccf708fe71c78a106151643e893ea006bba865d9
     # via pf2rnaseq
 param==2.1.1
     # via datashader
@@ -193,7 +192,6 @@ patsy==0.5.6
 pexpect==4.9.0
     # via ipython
 pillow==10.4.0
-    # via datashader
     # via matplotlib
 platformdirs==4.3.6
     # via jupyter-core
@@ -245,7 +243,6 @@ scanpy @ git+https://github.com/scverse/scanpy.git@c2a7a4b7ec3203121a8d75aa05fbe
     # via pf2rnaseq
 scikit-learn==1.6.1
     # via pacmap
-    # via parafac2
     # via pf2rnaseq
     # via pynndescent
     # via scanpy
