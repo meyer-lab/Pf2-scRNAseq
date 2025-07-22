@@ -1,8 +1,5 @@
-
-from parafac2.normalize import prepare_dataset
 import anndata
-
-
+from parafac2.normalize import prepare_dataset
 
 
 def import_cytokine(deviance=False) -> anndata.AnnData:
@@ -37,9 +34,7 @@ def import_Heiser(deviance=False) -> anndata.AnnData:
     """
     data = anndata.read_h5ad("/home/nicoleb/C3TAg.h5ad")
 
-    return prepare_dataset(
-        data, "sample_id", geneThreshold=0.1, deviance=deviance
-    )  
+    return prepare_dataset(data, "sample_id", geneThreshold=0.1, deviance=deviance)
 
 
 def import_MouseImmune(geneThreshold=0.1, deviance=False) -> anndata.AnnData:

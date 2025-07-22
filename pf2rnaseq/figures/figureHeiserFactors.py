@@ -2,9 +2,10 @@
 Heiser: Plotting factors
 """
 
-import pandas as pd
 import numpy as np
-from ..factorization import correct_conditions, pf2
+import pandas as pd
+
+from ..factorization import pf2
 from ..imports import import_Heiser
 from .common import getSetup, subplotLabel
 from .commonFuncs.plotFactors import (
