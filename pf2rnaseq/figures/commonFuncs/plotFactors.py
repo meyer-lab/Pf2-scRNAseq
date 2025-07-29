@@ -509,16 +509,14 @@ def plot_geneSetScoreDot(
     ax.axhline(y=0, color="gray", linestyle="-", lw=0.5, alpha=0.7)
 
 
-# Removed the local definition of get_condition_data. It is now imported from common.py.
 def plot_ttest(X: AnnData, ax: Axes):
     """Create heatmap figure showing dominant cytokines across components."""
 
     # Get total number of components
     total_components = X.uns["Pf2_A"].shape[1]
 
-    # Get all cytokines
-    condition_df = get_condition_data(X)
-    all_cytokines = condition_df["cytokine"].unique()
+    # Get all cytokines directly without separate function
+    all_cytokines = X.obs["cyt"].unique()
 
     # Analyze cytokine dominance using ANOVA + post-hoc
     results_df = find_dominant_cytokine_per_component(X)
