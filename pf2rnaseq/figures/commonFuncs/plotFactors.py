@@ -509,19 +509,7 @@ def plot_geneSetScoreDot(
     ax.axhline(y=0, color="gray", linestyle="-", lw=0.5, alpha=0.7)
 
 
-def get_condition_data(X):
-    """Extract condition data with cytokine labels."""
-    condition_data = []
-    unique_condition_indices = X.obs["condition_unique_idxs"].unique()
-    for cond_idx in unique_condition_indices:
-        cells = X.obs[X.obs["condition_unique_idxs"] == cond_idx]
-        if not cells.empty:
-            condition_data.append(
-                {"condition_idx": cond_idx, "cytokine": cells["cyt"].iloc[0]}
-            )
-    return pd.DataFrame(condition_data)
-
-
+# Removed the local definition of get_condition_data. It is now imported from common.py.
 def plot_ttest(X: AnnData, ax: Axes):
     """Create heatmap figure showing dominant cytokines across components."""
 
