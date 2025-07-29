@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
@@ -7,6 +6,8 @@ from anndata import AnnData
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.patches import Patch
+
+from ..common import find_dominant_cytokine_per_component
 
 cmap = sns.diverging_palette(240, 10, as_cmap=True)
 
@@ -106,6 +107,9 @@ def plot_condition_factors_groups(
     pd.set_option("display.max_rows", None)
     yt = pd.Series(np.unique(data.obs[cond]))
     X = np.array(data.uns["Pf2_A"])
+    # X = np.log10(X)
+    # X -= np.median(X, axis=0)
+    # X /= np.std(X, axis=0)
 
     # Hierarchically cluster conditions
     ind = reorder_table(X)
@@ -223,12 +227,12 @@ def plot_condition_factors_groups(
             ax.add_artist(main_legend)  # Add first legend
 
             # Add second legend
-            ax.legend(
-                handles=sub_legend_elements,
-                bbox_to_anchor=(0.5, 1.3),
-                title=subgroup_title,
-                loc="upper left",
-            )
+        # ax.legend(
+        #    handles=sub_legend_elements,
+        #    bbox_to_anchor=(0.5, 1.3),
+        #     title=subgroup_title,
+        #     loc="upper left",
+        # )
         else:
             # Add only main group legend if no subgroups
             ax.legend(
@@ -279,7 +283,7 @@ def plot_gene_factors(
     rank = data.varm["Pf2_C"].shape[1]
     X = np.array(data.varm["Pf2_C"])
     yt = data.var.index.values
-
+    sparsity = np.sum(np.abs(X) < 1e-6) / X.size
     if trim is True:
         max_weight = np.max(np.abs(X), axis=1)
         kept_idxs = max_weight > 0.08  # adjust this to sdjust amount of genes included
@@ -302,7 +306,8 @@ def plot_gene_factors(
         vmin=-1,
         vmax=1,
     )
-
+    title_text = f"Gene Factors (Sparsity: {sparsity:.5f})"
+    ax.set_title(title_text, fontsize=10, pad=10)
     ax.set(xlabel="Component")
 
 
@@ -502,3 +507,66 @@ def plot_geneSetScoreDot(
 
     # Add a horizontal line at y=0
     ax.axhline(y=0, color="gray", linestyle="-", lw=0.5, alpha=0.7)
+
+
+def get_condition_data(X):
+    """Extract condition data with cytokine labels."""
+    condition_data = []
+    unique_condition_indices = X.obs["condition_unique_idxs"].unique()
+    for cond_idx in unique_condition_indices:
+        cells = X.obs[X.obs["condition_unique_idxs"] == cond_idx]
+        if not cells.empty:
+            condition_data.append(
+                {"condition_idx": cond_idx, "cytokine": cells["cyt"].iloc[0]}
+            )
+    return pd.DataFrame(condition_data)
+
+
+def plot_ttest(X: AnnData, ax: Axes):
+    """Create heatmap figure showing dominant cytokines across components."""
+
+    # Get total number of components
+    total_components = X.uns["Pf2_A"].shape[1]
+
+    # Get all cytokines
+    condition_df = get_condition_data(X)
+    all_cytokines = condition_df["cytokine"].unique()
+
+    # Analyze cytokine dominance using ANOVA + post-hoc
+    results_df = find_dominant_cytokine_per_component(X)
+
+    # Create pivot table for all components
+    if len(results_df) > 0:
+        pivot_pvalues = results_df.pivot_table(
+            index="Cytokine",
+            columns="Component",
+            values="PostHoc_pvalue_corrected",
+            fill_value=1.0,
+        )
+    else:
+        # Create empty pivot table with all cytokines and components
+        pivot_pvalues = pd.DataFrame(
+            1.0, index=all_cytokines, columns=range(1, total_components + 1)
+        )
+
+    # Ensure all components are represented
+    all_components = list(range(1, total_components + 1))
+    pivot_pvalues = pivot_pvalues.reindex(columns=all_components, fill_value=1.0)
+
+    # Convert to -log10 for visualization
+    log_p_matrix = -np.log10(pivot_pvalues + 1e-10)
+
+    # Create heatmap
+    sns.heatmap(
+        log_p_matrix,
+        cmap="YlOrRd",
+        ax=ax,
+        xticklabels=True,
+        yticklabels=True,
+        cbar_kws={"label": "-log10(p-value)"},
+        linewidths=0.5,
+    )
+
+    ax.set_title("Dominant Cytokines Across Components (ANOVA + Post-hoc)")
+    ax.set_xlabel("Component")
+    ax.set_ylabel("Cytokine")
