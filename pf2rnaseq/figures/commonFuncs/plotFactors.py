@@ -24,10 +24,10 @@ def plot_condition_factors(
     yt = pd.Series(np.unique(data.obs[cond]))
     X = np.array(data.uns["Pf2_A"])
 
-    # X = np.log10(X)
+    X = np.log10(X)
 
-    # X -= np.median(X, axis=0)
-    # X /= np.std(X, axis=0)
+    X -= np.median(X, axis=0)
+    X /= np.std(X, axis=0)
 
     ind = reorder_table(X)
     X = X[ind]
@@ -89,6 +89,8 @@ def plot_condition_factors_groups(
     cond="Condition",
     main_group_title="Treatment",
     subgroup_title="Tumor Type",
+    log_scale=True,
+    sub_leg=True,
 ):
     """
     Plots Pf2 condition factors with two-level grouping capability.
@@ -97,19 +99,28 @@ def plot_condition_factors_groups(
     -----------
     data: AnnData object containing the Pf2 results
     ax: Matplotlib axes to plot on
-    cond_group_labels: Primary grouping labels (treatments)
-    subgroup_labels: Secondary grouping labels (tumor types)
+    cond_group_labels: Primary grouping labels (ie. treatments)
+    subgroup_labels: Secondary grouping labels (ie. tumor types)
     groupConditions: Whether to sort conditions by groups
     cond: Column name in obs containing condition information
     main_group_title: Title for the main group legend
     subgroup_title: Title for the subgroup legend
+    log_scale: Whether to apply log10 transformation to the data
+    sub_leg: Whether to show the subgroup legend
     """
     pd.set_option("display.max_rows", None)
     yt = pd.Series(np.unique(data.obs[cond]))
     X = np.array(data.uns["Pf2_A"])
-    # X = np.log10(X)
-    # X -= np.median(X, axis=0)
-    # X /= np.std(X, axis=0)
+    if log_scale:
+        # Apply log10 transformation for better visualization
+        assert np.all(X >= 0)
+        X = np.log10(X)
+
+    X -= np.median(X, axis=0)
+    X /= np.std(X, axis=0)
+
+    if log_scale is False:
+        X -= np.min(X, axis=0)
 
     # Hierarchically cluster conditions
     ind = reorder_table(X)
@@ -225,14 +236,15 @@ def plot_condition_factors_groups(
                 loc="upper left",
             )
             ax.add_artist(main_legend)  # Add first legend
+            if sub_leg:
+                # Add second legend for subgroups
+                ax.legend(
+                    handles=sub_legend_elements,
+                    bbox_to_anchor=(0.5, 1.3),
+                    title=subgroup_title,
+                    loc="upper left",
+                )
 
-            # Add second legend
-        # ax.legend(
-        #    handles=sub_legend_elements,
-        #    bbox_to_anchor=(0.5, 1.3),
-        #     title=subgroup_title,
-        #     loc="upper left",
-        # )
         else:
             # Add only main group legend if no subgroups
             ax.legend(
@@ -283,7 +295,6 @@ def plot_gene_factors(
     rank = data.varm["Pf2_C"].shape[1]
     X = np.array(data.varm["Pf2_C"])
     yt = data.var.index.values
-    sparsity = np.sum(np.abs(X) < 1e-6) / X.size
     if trim is True:
         max_weight = np.max(np.abs(X), axis=1)
         kept_idxs = max_weight > 0.08  # adjust this to sdjust amount of genes included
@@ -306,8 +317,6 @@ def plot_gene_factors(
         vmin=-1,
         vmax=1,
     )
-    title_text = f"Gene Factors (Sparsity: {sparsity:.5f})"
-    ax.set_title(title_text, fontsize=10, pad=10)
     ax.set(xlabel="Component")
 
 
