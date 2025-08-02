@@ -95,8 +95,8 @@ def get_condition_data(X):
     return pd.DataFrame(condition_data)
 
 
-def find_dominant_cytokine_per_component(X, alpha=0.05):
-    """Determine dominant cytokines using ANOVA followed by post-hoc pairwise comparisons."""
+def highly_weighted_cytokines(X, alpha=0.05):
+    """Determine highly weighted cytokines using ANOVA followed by post-hoc comparisons."""
     condition_df = get_condition_data(X)
     pf2_a = X.uns["Pf2_A"]
     all_cytokines = condition_df["cytokine"].unique()
@@ -124,7 +124,7 @@ def find_dominant_cytokine_per_component(X, alpha=0.05):
         ):
             f_stat, anova_p_value = f_oneway(*cytokine_groups)
 
-            # If ANOVA is significant, perform post-hoc tests to find dominant cytokines
+            # If ANOVA is significant, perform post-hoc tests to find highly weighted cytokines
             if anova_p_value < alpha:
                 for target_cytokine in all_cytokines:
                     if target_cytokine in cytokine_values:

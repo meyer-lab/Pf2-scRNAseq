@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.patches import Patch
 
-from ..common import find_dominant_cytokine_per_component
+from ..common import highly_weighted_cytokines
 
 cmap = sns.diverging_palette(240, 10, as_cmap=True)
 
@@ -527,8 +527,8 @@ def plot_ttest(X: AnnData, ax: Axes):
     # Get all cytokines directly without separate function
     all_cytokines = X.obs["cyt"].unique()
 
-    # Analyze cytokine dominance using ANOVA + post-hoc
-    results_df = find_dominant_cytokine_per_component(X)
+    #Get highly weighted cytokines per component
+    results_df = highly_weighted_cytokines(X)
 
     # Create pivot table for all components
     if len(results_df) > 0:
@@ -562,6 +562,6 @@ def plot_ttest(X: AnnData, ax: Axes):
         linewidths=0.5,
     )
 
-    ax.set_title("Dominant Cytokines Across Components (ANOVA + Post-hoc)")
+    ax.set_title("Highly weighted Cytokines Across Components (ANOVA + Post-hoc)")
     ax.set_xlabel("Component")
     ax.set_ylabel("Cytokine")
