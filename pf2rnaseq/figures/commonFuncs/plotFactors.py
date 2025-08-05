@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
@@ -7,6 +6,8 @@ from anndata import AnnData
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.patches import Patch
+
+from ..common import highly_weighted_cytokines
 
 cmap = sns.diverging_palette(240, 10, as_cmap=True)
 
@@ -23,10 +24,10 @@ def plot_condition_factors(
     yt = pd.Series(np.unique(data.obs[cond]))
     X = np.array(data.uns["Pf2_A"])
 
-    # X = np.log10(X)
+    X = np.log10(X)
 
-    # X -= np.median(X, axis=0)
-    # X /= np.std(X, axis=0)
+    X -= np.median(X, axis=0)
+    X /= np.std(X, axis=0)
 
     ind = reorder_table(X)
     X = X[ind]
@@ -88,6 +89,8 @@ def plot_condition_factors_groups(
     cond="Condition",
     main_group_title="Treatment",
     subgroup_title="Tumor Type",
+    log_scale=True,
+    sub_leg=True,
 ):
     """
     Plots Pf2 condition factors with two-level grouping capability.
@@ -96,16 +99,28 @@ def plot_condition_factors_groups(
     -----------
     data: AnnData object containing the Pf2 results
     ax: Matplotlib axes to plot on
-    cond_group_labels: Primary grouping labels (treatments)
-    subgroup_labels: Secondary grouping labels (tumor types)
+    cond_group_labels: Primary grouping labels (ie. treatments)
+    subgroup_labels: Secondary grouping labels (ie. tumor types)
     groupConditions: Whether to sort conditions by groups
     cond: Column name in obs containing condition information
     main_group_title: Title for the main group legend
     subgroup_title: Title for the subgroup legend
+    log_scale: Whether to apply log10 transformation to the data
+    sub_leg: Whether to show the subgroup legend
     """
     pd.set_option("display.max_rows", None)
     yt = pd.Series(np.unique(data.obs[cond]))
     X = np.array(data.uns["Pf2_A"])
+    if log_scale:
+        # Apply log10 transformation for better visualization
+        assert np.all(X >= 0)
+        X = np.log10(X)
+
+    X -= np.median(X, axis=0)
+    X /= np.std(X, axis=0)
+
+    if log_scale is False:
+        X -= np.min(X, axis=0)
 
     # Hierarchically cluster conditions
     ind = reorder_table(X)
@@ -221,14 +236,15 @@ def plot_condition_factors_groups(
                 loc="upper left",
             )
             ax.add_artist(main_legend)  # Add first legend
+            if sub_leg:
+                # Add second legend for subgroups
+                ax.legend(
+                    handles=sub_legend_elements,
+                    bbox_to_anchor=(0.5, 1.3),
+                    title=subgroup_title,
+                    loc="upper left",
+                )
 
-            # Add second legend
-            ax.legend(
-                handles=sub_legend_elements,
-                bbox_to_anchor=(0.5, 1.3),
-                title=subgroup_title,
-                loc="upper left",
-            )
         else:
             # Add only main group legend if no subgroups
             ax.legend(
@@ -279,7 +295,6 @@ def plot_gene_factors(
     rank = data.varm["Pf2_C"].shape[1]
     X = np.array(data.varm["Pf2_C"])
     yt = data.var.index.values
-
     if trim is True:
         max_weight = np.max(np.abs(X), axis=1)
         kept_idxs = max_weight > 0.08  # adjust this to sdjust amount of genes included
@@ -302,7 +317,6 @@ def plot_gene_factors(
         vmin=-1,
         vmax=1,
     )
-
     ax.set(xlabel="Component")
 
 
@@ -502,3 +516,52 @@ def plot_geneSetScoreDot(
 
     # Add a horizontal line at y=0
     ax.axhline(y=0, color="gray", linestyle="-", lw=0.5, alpha=0.7)
+
+
+def plot_ttest(X: AnnData, ax: Axes):
+    """Create heatmap figure showing dominant cytokines across components."""
+
+    # Get total number of components
+    total_components = X.uns["Pf2_A"].shape[1]
+
+    # Get all cytokines directly without separate function
+    all_cytokines = X.obs["cyt"].unique()
+
+    #Get highly weighted cytokines per component
+    results_df = highly_weighted_cytokines(X)
+
+    # Create pivot table for all components
+    if len(results_df) > 0:
+        pivot_pvalues = results_df.pivot_table(
+            index="Cytokine",
+            columns="Component",
+            values="PostHoc_pvalue_corrected",
+            fill_value=1.0,
+        )
+    else:
+        # Create empty pivot table with all cytokines and components
+        pivot_pvalues = pd.DataFrame(
+            1.0, index=all_cytokines, columns=range(1, total_components + 1)
+        )
+
+    # Ensure all components are represented
+    all_components = list(range(1, total_components + 1))
+    pivot_pvalues = pivot_pvalues.reindex(columns=all_components, fill_value=1.0)
+
+    # Convert to -log10 for visualization
+    log_p_matrix = -np.log10(pivot_pvalues + 1e-10)
+
+    # Create heatmap
+    sns.heatmap(
+        log_p_matrix,
+        cmap="YlOrRd",
+        ax=ax,
+        xticklabels=True,
+        yticklabels=True,
+        cbar_kws={"label": "-log10(p-value)"},
+        linewidths=0.5,
+    )
+
+    ax.set_title("Highly weighted Cytokines Across Components (ANOVA + Post-hoc)")
+    ax.set_xlabel("Component")
+    ax.set_ylabel("Cytokine")
