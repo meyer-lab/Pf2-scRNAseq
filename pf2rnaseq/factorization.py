@@ -5,6 +5,7 @@ import pandas as pd
 import scanpy as sc
 import scipy.sparse as sps
 from pacmap import PaCMAP
+from parafac2.normalize import prepare_dataset
 from parafac2.parafac2 import parafac2_nd, store_pf2
 from scipy.stats import gmean
 from sklearn.decomposition import PCA
@@ -43,7 +44,7 @@ def pf2(
     tolerance=1e-9,
     r2x=False,
 ):
-    cupy.cuda.Device(1).use()
+    cupy.cuda.Device(0).use()
     pf_out, R2X = parafac2_nd(
         X,
         rank=rank,
@@ -187,6 +188,136 @@ def fms_diff_ranks(
         fmsList_df += sublist
     df = pd.DataFrame(
         {"Run": runsList_df, "Component": ranksList_df, "FMS": fmsList_df}
+    )
+
+    return df
+
+
+def downsample_counts_multinomial(
+    X: anndata.AnnData,
+    percent_drop: float,
+    random_state: int = 0,
+) -> anndata.AnnData:
+    """
+    Create a downsampled counts copy of AnnData using multinomial sampling.
+
+    Parameters:
+    -----------
+    X : anndata.AnnData
+        Input dataset
+    percent_drop : float
+        Percentage of counts to drop (0-100)
+    random_state : int
+        Random seed for reproducibility
+
+    Returns:
+    --------
+    anndata.AnnData
+        Downsampled copy of the input data
+    """
+    import scipy.sparse as sp
+
+    # Handle 0% drop case
+    if percent_drop == 0:
+        return X.copy()
+
+    # Set random seed
+    np.random.seed(random_state)
+
+    # Convert to CSR and extract structure
+    original_csr = X.X.tocsr()
+    data = original_csr.data.copy()
+    indices = original_csr.indices
+    indptr = original_csr.indptr
+
+    # Process each cell
+    for cell_idx in range(X.n_obs):
+        start_idx = indptr[cell_idx]
+        end_idx = indptr[cell_idx + 1]
+
+        if start_idx == end_idx:
+            continue
+
+        cell_data = data[start_idx:end_idx]
+        total_counts = int(np.sum(cell_data))
+
+        if total_counts == 0:
+            continue
+
+        new_total = int(total_counts * (1 - percent_drop / 100))
+        if new_total == 0:
+            data[start_idx:end_idx] = 0
+            continue
+
+        # Convert to probabilities and normalize
+        probs = cell_data / total_counts
+        probs = probs / np.sum(probs)  # Ensure sum = 1.0
+
+        # Multinomial sampling
+        new_counts = np.random.multinomial(new_total, probs)
+        data[start_idx:end_idx] = new_counts.astype(cell_data.dtype)
+
+    # Create new sparse matrix
+    sampled_csr = sp.csr_matrix((data, indices, indptr), shape=original_csr.shape)
+
+    # Create new AnnData object
+    sampled_data = X.copy()
+    sampled_data.X = sampled_csr
+
+    return sampled_data
+
+
+def fms_percent_drop_counts_multinomial(
+    X: anndata.AnnData,
+    percentList: np.ndarray,
+    runs: int,
+    rank: int = 30,
+    deviance: bool = False,
+    condition: str = "Condition",
+    geneThreshold: float = 0.0,
+):
+    """
+    Multinomial sampling to reduce counts of each cell and calculate FMS.
+    """
+
+    # Get reference factorization
+    X_prepared = prepare_dataset(
+        X, condition, geneThreshold=geneThreshold, deviance=deviance
+    )
+    dataX = pf2(X_prepared, rank, doEmbedding=False)
+
+    # Pre-allocate results
+    results = np.zeros((runs, len(percentList)))
+
+    # Main loop
+    for j in range(runs):
+        for i, percent_drop in enumerate(percentList):
+            # Handle 0% drop case separately (no sampling needed)
+            if percent_drop == 0:
+                results[j, i] = 1.0  # FMS = 1.0 for identical data
+                continue
+
+            # Create downsampled data
+            sampled_data = downsample_counts_multinomial(
+                X, percent_drop, random_state=j
+            )
+
+            # Apply same processing as reference
+            sampled_data = prepare_dataset(
+                sampled_data, condition, geneThreshold=geneThreshold, deviance=deviance
+            )
+
+            # Factorization
+            sampledX = pf2(sampled_data, rank, random_state=j + 2, doEmbedding=False)
+            results[j, i] = calculateFMS(dataX, sampledX)
+
+    # Prepare DataFrame for results
+    df = pd.DataFrame(
+        {
+            "Run": np.repeat(np.arange(runs), len(percentList)),
+            "Percentage of Counts Dropped": np.tile(percentList, runs),
+            "FMS": results.flatten(),
+        }
     )
 
     return df

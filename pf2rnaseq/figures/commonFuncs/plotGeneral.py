@@ -6,7 +6,12 @@ import scipy.sparse
 import seaborn as sns
 from matplotlib.axes import Axes
 
-from ...factorization import fms_percent_drop, pf2_pca_r2x, fms_diff_ranks
+from ...factorization import (
+    fms_diff_ranks,
+    fms_percent_drop,
+    fms_percent_drop_counts_multinomial,
+    pf2_pca_r2x,
+)
 
 
 def plot_r2x(data, rank_vec, ax: Axes):
@@ -459,4 +464,20 @@ def plot_fms_percent_drop(
     """Plots FMS when dropping different percentages of data"""
     df = fms_percent_drop(X, percentList, runs, rank)
     sns.lineplot(data=df, x="Percentage of Data Dropped", y="FMS", ax=ax)
+    ax.set_ylim(0, 1)
+
+
+def plot_fms_percent_drop_counts(
+    X: anndata.AnnData,
+    ax: Axes,
+    percentList: np.ndarray,
+    runs=3,
+    rank: int = 30,
+    deviance: bool = False,
+):
+    """Plots FMS when dropping different percentages of data"""
+    df = fms_percent_drop_counts_multinomial(
+        X, percentList, runs, rank, deviance=deviance
+    )
+    sns.lineplot(data=df, x="Percentage of Counts Dropped", y="FMS", ax=ax)
     ax.set_ylim(0, 1)
