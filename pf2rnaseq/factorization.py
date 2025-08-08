@@ -45,11 +45,13 @@ def pf2(
 ):
     cupy.cuda.Device(1).use()
     pf_out, R2X = parafac2_nd(
+
         X,
         rank=rank,
         random_state=random_state,
         tol=tolerance,
         n_iter_max=500,
+
     )
 
     X = store_pf2(X, pf_out)
