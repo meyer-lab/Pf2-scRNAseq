@@ -9,7 +9,7 @@ from matplotlib.axes import Axes
 from ...factorization import (
     fms_diff_ranks,
     fms_percent_drop,
-    fms_percent_drop_counts_multinomial,
+    fms_percent_drop_counts,
     pf2_pca_r2x,
 )
 
@@ -471,13 +471,12 @@ def plot_fms_percent_drop_counts(
     X: anndata.AnnData,
     ax: Axes,
     percentList: np.ndarray,
-    runs=3,
     rank: int = 30,
     deviance: bool = False,
+    label: str = None,
 ):
     """Plots FMS when dropping different percentages of data"""
-    df = fms_percent_drop_counts_multinomial(
-        X, percentList, runs, rank, deviance=deviance
-    )
-    sns.lineplot(data=df, x="Percentage of Counts Dropped", y="FMS", ax=ax)
+    df = fms_percent_drop_counts(X, percentList, rank, deviance=deviance)
+    sns.lineplot(data=df, x="Percentage of Counts Dropped", y="FMS", ax=ax, label=label)
     ax.set_ylim(0, 1)
+

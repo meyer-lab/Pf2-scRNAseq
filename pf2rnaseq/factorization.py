@@ -44,7 +44,7 @@ def pf2(
     tolerance=1e-9,
     r2x=False,
 ):
-    cupy.cuda.Device(0).use()
+    cupy.cuda.Device(1).use()
     pf_out, R2X = parafac2_nd(
         X,
         rank=rank,
@@ -267,57 +267,112 @@ def downsample_counts_multinomial(
     return sampled_data
 
 
-def fms_percent_drop_counts_multinomial(
+def calculate_fms_downsample(
+    X: anndata.AnnData,
+    X_pf2: anndata.AnnData,
+    percent_drop: float,
+    rank: int = 30,
+    deviance: bool = False,
+    condition: str = "Condition",
+    random_state: int = 0,
+) -> float:
+    """
+    Calculate FMS for a single downsampling scenario.
+
+    Parameters:
+    -----------
+    X : anndata.AnnData
+        Original dataset for reference
+    X_pf2 : anndata.AnnData
+        Full factorized dataset
+    percent_drop : float
+        Percentage of counts to drop (0-100)
+    rank : int
+        Factorization rank
+    deviance : bool
+        Whether to use deviance normalization
+    condition : str
+        Condition column name
+    random_state : int
+        Random seed
+
+    Returns:
+    --------
+    float
+        FMS score
+    """
+
+    # Handle 0% drop case
+    if percent_drop == 0:
+        return 1.0
+
+    # Create downsampled data
+    sampled_data = downsample_counts_multinomial(
+        X, percent_drop, random_state=random_state
+    )
+
+    # Apply same processing as reference
+    sampled_data = prepare_dataset(
+        sampled_data, condition, geneThreshold=0.0, deviance=deviance
+    )
+
+    # Factorization
+    sampledX = pf2(sampled_data, rank, random_state=random_state + 2, doEmbedding=False)
+
+    return calculateFMS(X_pf2, sampledX)
+
+
+def fms_percent_drop_counts(
     X: anndata.AnnData,
     percentList: np.ndarray,
-    runs: int,
     rank: int = 30,
     deviance: bool = False,
     condition: str = "Condition",
     geneThreshold: float = 0.0,
-):
+    random_state: int = 0,
+) -> pd.DataFrame:
     """
-    Multinomial sampling to reduce counts of each cell and calculate FMS.
-    """
+    Calculate FMS for multiple downsampling percentages (single run).
 
-    # Get reference factorization
+    Parameters:
+    -----------
+    X : anndata.AnnData
+        Input dataset
+    percentList : np.ndarray
+        Array of dropout percentages to test
+    rank : int
+        Factorization rank
+    deviance : bool
+        Whether to use deviance normalization
+    condition : str
+        Condition column name
+    geneThreshold : float
+        Gene threshold for preparation
+    random_state : int
+        Random seed
+
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame with columns: Percentage of Counts Dropped, FMS
+    """
+    results = []
     X_prepared = prepare_dataset(
         X, condition, geneThreshold=geneThreshold, deviance=deviance
     )
-    dataX = pf2(X_prepared, rank, doEmbedding=False)
+    X_pf2 = pf2(X_prepared, rank, doEmbedding=False)
 
-    # Pre-allocate results
-    results = np.zeros((runs, len(percentList)))
+    for percent_drop in percentList:
+        fms_score = calculate_fms_downsample(
+            X=X,
+            X_pf2=X_pf2,
+            percent_drop=percent_drop,
+            rank=rank,
+            deviance=deviance,
+            condition=condition,
+            random_state=random_state,
+        )
 
-    # Main loop
-    for j in range(runs):
-        for i, percent_drop in enumerate(percentList):
-            # Handle 0% drop case separately (no sampling needed)
-            if percent_drop == 0:
-                results[j, i] = 1.0  # FMS = 1.0 for identical data
-                continue
+        results.append({"Percentage of Counts Dropped": percent_drop, "FMS": fms_score})
 
-            # Create downsampled data
-            sampled_data = downsample_counts_multinomial(
-                X, percent_drop, random_state=j
-            )
-
-            # Apply same processing as reference
-            sampled_data = prepare_dataset(
-                sampled_data, condition, geneThreshold=geneThreshold, deviance=deviance
-            )
-
-            # Factorization
-            sampledX = pf2(sampled_data, rank, random_state=j + 2, doEmbedding=False)
-            results[j, i] = calculateFMS(dataX, sampledX)
-
-    # Prepare DataFrame for results
-    df = pd.DataFrame(
-        {
-            "Run": np.repeat(np.arange(runs), len(percentList)),
-            "Percentage of Counts Dropped": np.tile(percentList, runs),
-            "FMS": results.flatten(),
-        }
-    )
-
-    return df
+    return pd.DataFrame(results)
