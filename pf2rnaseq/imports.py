@@ -137,7 +137,7 @@ def get_cells(
     donor_column : str
         Name of the observation column containing donor info (default: "donor")
     cytokine_column : str
-        Name of the observation column containing cytokine info (default: "cyt")
+        Name of the observation column containing cytokine info (default: "cytokine")
 
     Returns:
     --------
