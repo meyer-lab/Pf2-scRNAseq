@@ -99,7 +99,9 @@ def get_labels(path: str, obs_column: str, unique: bool = True) -> pd.Series:
     Returns:
     --------
     pd.Series
-        Series containing the values from the specified obs column
+    Union[pd.Series, np.ndarray]
+        If unique is False, returns a pandas Series containing the values from the specified obs column.
+        If unique is True, returns a numpy array of unique values from the specified obs column.
     """
     # Open in backed mode - only loads metadata, not the expression matrix
     adata = anndata.read_h5ad(path, backed="r")
