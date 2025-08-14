@@ -135,7 +135,7 @@ def get_cells(
     cytokine : str
         Cytokine identifier to filter by
     donor_column : str
-        Name of the observation column containing donor info (default: "biosample_id")
+        Name of the observation column containing donor info (default: "donor")
     cytokine_column : str
         Name of the observation column containing cytokine info (default: "cyt")
 
