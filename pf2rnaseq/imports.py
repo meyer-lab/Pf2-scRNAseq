@@ -1,12 +1,9 @@
 from concurrent.futures import ProcessPoolExecutor
-from parafac2.normalize import prepare_dataset
+
 import anndata
-import numpy as np
 import pandas as pd
 import scanpy as sc
-from scipy.sparse import csr_array, spmatrix
-from sklearn.preprocessing import scale
-from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
+from parafac2.normalize import prepare_dataset
 
 
 def import_citeseq() -> anndata.AnnData:
@@ -68,7 +65,6 @@ def import_Heiser(deviance=False) -> anndata.AnnData:
         return prepare_dataset(data, "sample_id", geneThreshold=0.1)
 
 
-
 def import_MouseImmune() -> anndata.AnnData:
     """Import Mouse Immune Dictionary cytokine data.
      -- columns from observation data:
@@ -88,39 +84,91 @@ def import_MouseImmune() -> anndata.AnnData:
     return prepare_dataset(X, "biosample_id", geneThreshold=0.1)  # 0.01
 
 
-def pseudobulk_lupus(X, cellType="Cell Type"):
-    """Average gene expression for each condition and cell type;
-    creates matrix and tensor version"""
-    X_df = X.to_df()
-    X_df = X_df.subtract(X.var["means"].values)
-    X_df["Condition"] = X.obs["Condition"].values
-    X_df["Cell Type"] = X.obs[cellType].values
-    X_df["Status"] = X.obs["SLE_status"].values
-    X_matrix = (
-        X_df.groupby(["Condition", "Cell Type"], observed=False)
-        .mean(numeric_only=True)
-        .reset_index()
-    )
+def get_labels(path: str, obs_column: str, unique: bool = True) -> pd.Series:
+    """Get labels from the AnnData object using backed mode to avoid loading full dataset.
 
-    conds = pd.unique(X_matrix["Condition"])
-    celltypes = pd.unique(X_matrix["Cell Type"])
-    genes = X.var_names.values
+    Parameters:
+    -----------
+    path : str
+        Path to the .h5ad file
+    obs_column : str
+        Name of the observation column to extract
+    unique : bool
+        If True, return unique values from the specified obs column
 
-    status = []
-    for i, cond in enumerate(conds):
-        all_status = X_df.loc[X_df["Condition"] == cond]["Status"]
-        status = np.append(status, np.unique(all_status))
+    Returns:
+    --------
+    pd.Series
+        Series containing the values from the specified obs column
+    """
+    # Open in backed mode - only loads metadata, not the expression matrix
+    adata = anndata.read_h5ad(path, backed="r")
 
-    X_matrix["Status"] = np.repeat(status, len(celltypes))
+    # Extract the specific column from obs
+    if obs_column not in adata.obs.columns:
+        raise KeyError(
+            f"Column '{obs_column}' not found in obs. Available columns: {list(adata.obs.columns)}"
+        )
 
-    X_tensor = np.empty((len(conds), len(celltypes), len(genes)))
-    X_tensor[:] = np.nan
+    labels = adata.obs[obs_column].copy()
+    if unique:
+        labels = labels.unique()
 
-    for i, cond in enumerate(conds):
-        for j, celltype in enumerate(celltypes):
-            specific_df = X_matrix.loc[
-                (X_matrix["Condition"] == cond) & (X_matrix["Cell Type"] == celltype)
-            ]
-            X_tensor[i, j, :] = specific_df.iloc[0, 2:-1].to_numpy()
+    return labels
 
-    return X_matrix, X_tensor
+
+def get_cells(
+    path: str,
+    donor: str,
+    cytokine: str,
+    donor_column: str = "donor",
+    cytokine_column: str = "cytokine",
+) -> anndata.AnnData:
+    """Get cells matching specific donor and cytokine using backed mode.
+
+    Parameters:
+    -----------
+    path : str
+        Path to the .h5ad file
+    donor : str
+        Donor identifier to filter by
+    cytokine : str
+        Cytokine identifier to filter by
+    donor_column : str
+        Name of the observation column containing donor info (default: "biosample_id")
+    cytokine_column : str
+        Name of the observation column containing cytokine info (default: "cyt")
+
+    Returns:
+    --------
+    anndata.AnnData
+        Subset of AnnData containing only cells matching the donor and cytokine criteria
+    """
+    # Open in backed mode - only loads metadata initially
+    adata = anndata.read_h5ad(path, backed="r")
+
+    # Check if required columns exist
+    if donor_column not in adata.obs.columns:
+        raise KeyError(
+            f"Column '{donor_column}' not found in obs. Available columns: {list(adata.obs.columns)}"
+        )
+
+    if cytokine_column not in adata.obs.columns:
+        raise KeyError(
+            f"Column '{cytokine_column}' not found in obs. Available columns: {list(adata.obs.columns)}"
+        )
+
+    # Create boolean mask for filtering
+    donor_mask = adata.obs[donor_column] == donor
+    cytokine_mask = adata.obs[cytokine_column] == cytokine
+    combined_mask = donor_mask & cytokine_mask
+
+    # Check if any cells match the criteria
+    if not combined_mask.any():
+        print(
+            f"Warning: No cells found matching donor='{donor}' and cytokine='{cytokine}'"
+        )
+
+    # Subset the data - this will load only the required portion
+    filtered_adata = adata[combined_mask].to_memory()
+    return filtered_adata
