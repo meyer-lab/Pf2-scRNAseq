@@ -1,12 +1,8 @@
 from concurrent.futures import ProcessPoolExecutor
-from parafac2.normalize import prepare_dataset
+
 import anndata
-import numpy as np
-import pandas as pd
 import scanpy as sc
-from scipy.sparse import csr_array, spmatrix
-from sklearn.preprocessing import scale
-from sklearn.utils.sparsefuncs import inplace_column_scale, mean_variance_axis
+from parafac2.normalize import prepare_dataset
 
 
 def import_citeseq() -> anndata.AnnData:
@@ -68,7 +64,6 @@ def import_Heiser(deviance=False) -> anndata.AnnData:
         return prepare_dataset(data, "sample_id", geneThreshold=0.1)
 
 
-
 def import_MouseImmune() -> anndata.AnnData:
     """Import Mouse Immune Dictionary cytokine data.
      -- columns from observation data:
@@ -88,39 +83,3 @@ def import_MouseImmune() -> anndata.AnnData:
     return prepare_dataset(X, "biosample_id", geneThreshold=0.1)  # 0.01
 
 
-def pseudobulk_lupus(X, cellType="Cell Type"):
-    """Average gene expression for each condition and cell type;
-    creates matrix and tensor version"""
-    X_df = X.to_df()
-    X_df = X_df.subtract(X.var["means"].values)
-    X_df["Condition"] = X.obs["Condition"].values
-    X_df["Cell Type"] = X.obs[cellType].values
-    X_df["Status"] = X.obs["SLE_status"].values
-    X_matrix = (
-        X_df.groupby(["Condition", "Cell Type"], observed=False)
-        .mean(numeric_only=True)
-        .reset_index()
-    )
-
-    conds = pd.unique(X_matrix["Condition"])
-    celltypes = pd.unique(X_matrix["Cell Type"])
-    genes = X.var_names.values
-
-    status = []
-    for i, cond in enumerate(conds):
-        all_status = X_df.loc[X_df["Condition"] == cond]["Status"]
-        status = np.append(status, np.unique(all_status))
-
-    X_matrix["Status"] = np.repeat(status, len(celltypes))
-
-    X_tensor = np.empty((len(conds), len(celltypes), len(genes)))
-    X_tensor[:] = np.nan
-
-    for i, cond in enumerate(conds):
-        for j, celltype in enumerate(celltypes):
-            specific_df = X_matrix.loc[
-                (X_matrix["Condition"] == cond) & (X_matrix["Cell Type"] == celltype)
-            ]
-            X_tensor[i, j, :] = specific_df.iloc[0, 2:-1].to_numpy()
-
-    return X_matrix, X_tensor
