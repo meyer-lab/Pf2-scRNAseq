@@ -3,7 +3,46 @@ from concurrent.futures import ProcessPoolExecutor
 import anndata
 import scanpy as sc
 from parafac2.normalize import prepare_dataset
+import doubletdetection
+import pandas as pd
 
+
+
+
+
+def remove_doublets(data: anndata.AnnData) -> anndata.AnnData:
+    """Removes doublets."""
+    sc.pp.filter_genes(data, min_cells=1)
+    data.obs.loc[:, "doublet"] = 0
+    for run in data.obs.loc[:, "cytokine"].unique():
+        print(run)
+        # Create boolean mask for this cytokine condition
+        mask = data.obs.loc[:, "cytokine"] == run
+        
+        # Use the mask to subset the data properly
+        sample = data[mask, :]
+        
+        if sample.shape[0] < 30:
+            # Remove cells from this condition
+            data = data[~mask, :]
+            continue
+
+        clf = doubletdetection.BoostClassifier(
+            boost_rate=0.1,
+            n_iters=10,
+            clustering_algorithm="louvain",
+            standard_scaling=True,
+            pseudocount=0.1,
+            n_jobs=-1,
+        )
+        
+        # Assign doublet predictions back to the correct cells
+        data.obs.loc[mask, "doublet"] = clf.fit(sample).predict(p_thresh=1e-16, voter_thresh=0.5)
+
+    # Remove all doublets
+    data = data[~data.obs.loc[:, "doublet"].astype(bool), :]
+
+    return data
 
 def import_citeseq() -> anndata.AnnData:
     """Imports 5 datasets from Hamad CITEseq."""
@@ -35,7 +74,7 @@ def import_cytokine() -> anndata.AnnData:
     X = anndata.read_h5ad("/opt/extra-storage/Treg_h5ads/Treg_raw.h5ad")
 
     # Remove multiplexing identifiers
-    X = X[:, ~X.var_names.str.match("^CMO3[0-9]{2}$")]  # type: ignore
+    X = X[:, ~X.var_names.str.match("^CMO3[0-9]{2}$")].copy()  # type: ignore
 
     return prepare_dataset(X, "Condition", geneThreshold=0.002)  # 0.1
 
@@ -50,21 +89,18 @@ def import_pf2Cytokine30() -> anndata.AnnData:
     return X
 
 
-def import_Heiser(deviance=False) -> anndata.AnnData:
+def import_Heiser() -> anndata.AnnData:
     """Import Heiser C3TAg dataset.
     anndata.X is the raw counts
 
     """
     data = anndata.read_h5ad("/home/nicoleb/C3TAg.h5ad")
-    if deviance:
-        # Apply deviance transformation
-        return prepare_dataset(data, "sample_id", geneThreshold=0.1, deviance=True)
-    else:
-        # Apply standard normalization and scaling
-        return prepare_dataset(data, "sample_id", geneThreshold=0.1)
+ 
+
+    return prepare_dataset(data, "sample_id", geneThreshold=0.1)
 
 
-def import_MouseImmune() -> anndata.AnnData:
+def import_MouseImmune(geneThreshold=0.1) -> anndata.AnnData:
     """Import Mouse Immune Dictionary cytokine data.
      -- columns from observation data:
     {'biosample_id': cytokine and replicate info,
@@ -78,8 +114,28 @@ def import_MouseImmune() -> anndata.AnnData:
     ...}"""
     X = anndata.read_h5ad("/home/nicoleb/MouseCytok.h5ad")
     # Filter out doublets
-    X = X[X.obs["celltype"] != "doublet", :]
+    X = X[X.obs["celltype"] != "doublet", :].copy()
 
-    return prepare_dataset(X, "biosample_id", geneThreshold=0.1)  # 0.01
+    return prepare_dataset(X, "biosample_id", geneThreshold=geneThreshold)  # 0.01
 
+
+def import_Parse(geneThreshold=0.1, doublet=False) -> anndata.AnnData:
+    """Import Parse data .
+    cytokine: cytokine treatment
+    donor: donor identifier
+
+    """
+    X = anndata.read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Parse_Donor11.h5ad")
+    if doublet:
+        doubletDF = pd.read_csv("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/DN11Doublets.csv", index_col=0)
+        X.obs = X.obs.join(doubletDF, how="inner")
+        singlet_mask = X.obs["doublet"] == 0
+        X = X[singlet_mask, :].copy()
+        print(f"Kept {X.n_obs} singlet cells, removed {(~singlet_mask).sum()} doublets")
+    
+   
+    
+  
+   
+    return prepare_dataset(X, "cytokine", geneThreshold=geneThreshold)  
 

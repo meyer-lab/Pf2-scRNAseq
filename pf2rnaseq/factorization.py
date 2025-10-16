@@ -16,10 +16,15 @@ from tqdm import tqdm
 
 def correct_conditions(X: anndata.AnnData):
     """Correct the conditions factors by overall read depth. Ensures that weighting is not affected by cell count difference"""
-    # sgIndex = X.obs["condition_unique_idxs"]
-    sgIndex = X.obs["condition_unique_idxs"].cat.codes
+    sgIndex = X.obs["condition_unique_idxs"]
+    #sgIndex = X.obs["condition_unique_idxs"].cat.codes
     counts = np.zeros((np.amax(sgIndex) + 1, 1))
-
+    min_val = np.min(X.uns["Pf2_A"])
+    if min_val < 0:
+        # Add the absolute value of the minimum (plus a small epsilon) to make all values positive
+        X.uns["Pf2_A"] = X.uns["Pf2_A"] + abs(min_val) + 1e-10
+        print(f"Warning: Found negative values in Pf2_A (min: {min_val:.6f}). Added {abs(min_val) + 1e-10:.6f} to all values.")
+    
     cond_mean = gmean(X.uns["Pf2_A"], axis=1)
 
     x_count = X.X.sum(axis=1)
@@ -43,7 +48,7 @@ def pf2(
     tolerance=1e-9,
     r2x=False,
 ):
-    cupy.cuda.Device(1).use()
+    cupy.cuda.Device(0).use()
     pf_out, R2X = parafac2_nd(
 
         X,
@@ -72,7 +77,7 @@ def pf2_pca_r2x(X: anndata.AnnData, ranks):
     r2x_pf2 = np.zeros(len(ranks))
 
     for i in tqdm(range(len(r2x_pf2)), total=len(r2x_pf2)):
-        _, R2X = parafac2_nd(X, rank=i + 1)
+        _, R2X = parafac2_nd(X, rank=ranks[i])
         r2x_pf2[i] = R2X
 
     pca = PCA(n_components=ranks[-1], svd_solver="arpack")
