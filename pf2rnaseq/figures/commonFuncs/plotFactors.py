@@ -454,7 +454,7 @@ def plot_geneSetScore(
 
     ax.set_xlabel("Component", fontsize=20)
     ax.set_ylabel("Sum of Weights", fontsize=20)
-    ax.set_title("Inflammatory Signature Score", fontsize=25)
+    ax.set_title("Signature Score", fontsize=25)
     ax.tick_params(axis='x', rotation=90, labelsize=16)
     ax.tick_params(axis='y', labelsize=16)
 
@@ -576,7 +576,7 @@ def plot_comp_weights(
             Patch(facecolor='darkred', label=f'Top {top_n} Highest'),
             Patch(facecolor='darkblue', label=f'Top {top_n} Lowest')
         ]
-        #ax.legend(handles=legend_elements, loc='upper right')
+        ax.legend(handles=legend_elements, loc='upper right')
     
     # Add horizontal line at y=0 for reference
     ax.axhline(y=0, color='gray', linestyle='-', alpha=0.3)
