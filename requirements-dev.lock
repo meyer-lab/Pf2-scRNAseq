@@ -83,7 +83,6 @@ idna==3.8
     # via requests
 igraph==0.11.6
     # via leidenalg
-    # via louvain
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
@@ -113,8 +112,6 @@ llvmlite==0.44.0
     # via pynndescent
 locket==1.0.0
     # via partd
-louvain==0.8.2
-    # via pf2rnaseq
 matplotlib==3.9.2
     # via doubletdetection
     # via gseapy

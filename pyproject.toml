@@ -29,7 +29,6 @@ dependencies = [
     "parafac2 @ git+https://github.com/meyer-lab/parafac2.git",
     "wandb>=0.19.9",
     "doubletdetection>=4.3.0.post1",
-    "louvain>=0.8.2",
 ]
 
 
