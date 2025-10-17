@@ -3,46 +3,7 @@ from concurrent.futures import ProcessPoolExecutor
 import anndata
 import scanpy as sc
 from parafac2.normalize import prepare_dataset
-import doubletdetection
 import pandas as pd
-
-
-
-
-
-def remove_doublets(data: anndata.AnnData) -> anndata.AnnData:
-    """Removes doublets."""
-    sc.pp.filter_genes(data, min_cells=1)
-    data.obs.loc[:, "doublet"] = 0
-    for run in data.obs.loc[:, "cytokine"].unique():
-        print(run)
-        # Create boolean mask for this cytokine condition
-        mask = data.obs.loc[:, "cytokine"] == run
-        
-        # Use the mask to subset the data properly
-        sample = data[mask, :]
-        
-        if sample.shape[0] < 30:
-            # Remove cells from this condition
-            data = data[~mask, :]
-            continue
-
-        clf = doubletdetection.BoostClassifier(
-            boost_rate=0.1,
-            n_iters=10,
-            clustering_algorithm="louvain",
-            standard_scaling=True,
-            pseudocount=0.1,
-            n_jobs=-1,
-        )
-        
-        # Assign doublet predictions back to the correct cells
-        data.obs.loc[mask, "doublet"] = clf.fit(sample).predict(p_thresh=1e-16, voter_thresh=0.5)
-
-    # Remove all doublets
-    data = data[~data.obs.loc[:, "doublet"].astype(bool), :]
-
-    return data
 
 def import_citeseq() -> anndata.AnnData:
     """Imports 5 datasets from Hamad CITEseq."""
