@@ -1,9 +1,10 @@
 from concurrent.futures import ProcessPoolExecutor
 
 import anndata
+import pandas as pd
 import scanpy as sc
 from parafac2.normalize import prepare_dataset
-import pandas as pd
+
 
 def import_citeseq() -> anndata.AnnData:
     """Imports 5 datasets from Hamad CITEseq."""
@@ -56,7 +57,6 @@ def import_Heiser() -> anndata.AnnData:
 
     """
     data = anndata.read_h5ad("/home/nicoleb/C3TAg.h5ad")
- 
 
     return prepare_dataset(data, "sample_id", geneThreshold=0.1)
 
@@ -88,15 +88,12 @@ def import_Parse(geneThreshold=0.1, doublet=False) -> anndata.AnnData:
     """
     X = anndata.read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Parse_Donor11.h5ad")
     if doublet:
-        doubletDF = pd.read_csv("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/DN11Doublets.csv", index_col=0)
-        X.obs = X.obs.join(doubletDF, how="inner")
+        doubletDF = pd.read_csv(
+            "/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/DN11Doublets.csv", index_col=0
+        )
+        X.obs = X.obs.join(doubletDF.reindex(X.obs.index))
         singlet_mask = X.obs["doublet"] == 0
         X = X[singlet_mask, :].copy()
         print(f"Kept {X.n_obs} singlet cells, removed {(~singlet_mask).sum()} doublets")
-    
-   
-    
-  
-   
-    return prepare_dataset(X, "cytokine", geneThreshold=geneThreshold)  
 
+    return prepare_dataset(X, "cytokine", geneThreshold=geneThreshold)

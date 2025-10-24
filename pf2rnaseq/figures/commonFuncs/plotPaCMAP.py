@@ -107,10 +107,9 @@ def plot_wp_pacmap(X: anndata.AnnData, cmp: int, ax: Axes, cbarMax: float = 1.0)
     ds_show(result, ax)
 
     psm = plt.pcolormesh([[-cbarMax, cbarMax], [-cbarMax, cbarMax]], cmap=cmap)
-    
+
     cbar = plt.colorbar(psm, ax=ax)
-    
-   
+
     ax.set_title("Cmp. " + str(cmp))
     ax = assign_labels(ax)
 
@@ -159,7 +158,9 @@ def plot_labels_pacmap(
 
     ds_show(result, ax)
 
-    ax.legend(handles=legend_elements, fontsize=25, bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax.legend(
+        handles=legend_elements, fontsize=25, bbox_to_anchor=(1.05, 1), loc="upper left"
+    )
     ax = assign_labels(ax)
 
 
@@ -184,7 +185,6 @@ def plot_wp_per_celltype(
         xticks=np.linspace(-maxvalue, maxvalue, num=5), xlabel="Cell Specific Weight"
     )
     ax.set_title(cmpName, fontsize=15)
-   
 
 
 def assign_labels(ax):

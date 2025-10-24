@@ -12,8 +12,6 @@ from ..common import highly_weighted_cytokines
 cmap = sns.diverging_palette(240, 10, as_cmap=True)
 
 
-
-
 def plot_condition_factors(
     data: AnnData,
     ax: Axes,
@@ -44,7 +42,7 @@ def plot_condition_factors(
             X = X[ind]
             yt = yt.iloc[ind]
         ax.tick_params(axis="y", which="major", pad=20, length=0)
-        
+
         # extra padding to leave room for the row colors
         # get list of colors for each label:
         colors = sns.color_palette(
@@ -291,7 +289,6 @@ def plot_eigenstate_factors(data: AnnData, ax: Axes):
         vmax=1,
     )
     ax.set(xlabel="Component")
-  
 
 
 def plot_gene_factors(
@@ -327,7 +324,6 @@ def plot_gene_factors(
     ax.set(xlabel="Component")
 
 
-
 def plot_geneSet_factors(
     data: AnnData, ax: Axes, genes: np.array, trim=True
 ):  # yt gene names- input that will
@@ -339,9 +335,9 @@ def plot_geneSet_factors(
     kept_idxs = np.where(np.in1d(yt, genes))
     X = X[kept_idxs]
     yt = yt[kept_idxs]
-    
+
     X = X / np.max(np.abs(X))
-    
+
     xticks = np.arange(1, rank + 1)
 
     sns.heatmap(
@@ -428,35 +424,45 @@ def plot_geneSetScore(
     component_sums = np.sum(X, axis=0)
 
     # Find the top 3 components with highest absolute scores
-    top_3_indices = np.argsort(np.abs(component_sums))[-1:]
-    top_3_components = top_3_indices + 1  # Convert to 1-indexed
-    
+    top_3_indices = np.argsort(np.abs(component_sums))[-3:]
+
     # Create colors array - highlight the top 3 components
     colors = []
     for i in range(len(component_sums)):
         if i in top_3_indices:
-            colors.append('darkred')
+            colors.append("darkred")
         else:
-            colors.append('steelblue')
+            colors.append("steelblue")
 
     # Create the bar plot
     xticks = np.arange(1, rank + 1)
-    bars = ax.bar(xticks, component_sums, color=colors)
+    sns.barplot(x=xticks, y=component_sums, ax=ax)
 
+    ax.set_xlabel("Component", fontsize=12)
+    ax.set_ylabel("Sum of Weights", fontsize=12)
+    ax.set_title("Sum of Gene Factors per Component", fontsize=12)
     # Add labels to the top 3 components
     for idx in top_3_indices:
         component_num = idx + 1
-        y_pos = component_sums[idx] + 0.01 * np.sign(component_sums[idx]) * np.max(np.abs(component_sums))
-        ax.text(component_num, y_pos,
-                f'Comp. {component_num}', 
-                ha='center', va='bottom' if component_sums[idx] > 0 else 'top',
-                fontsize=12, fontweight='bold', color='darkred')
+        y_pos = component_sums[idx] + 0.01 * np.sign(component_sums[idx]) * np.max(
+            np.abs(component_sums)
+        )
+        ax.text(
+            component_num,
+            y_pos,
+            f"Comp. {component_num}",
+            ha="center",
+            va="bottom" if component_sums[idx] > 0 else "top",
+            fontsize=12,
+            fontweight="bold",
+            color="darkred",
+        )
 
     ax.set_xlabel("Component", fontsize=20)
     ax.set_ylabel("Sum of Weights", fontsize=20)
     ax.set_title("Signature Score", fontsize=25)
-    ax.tick_params(axis='x', rotation=90, labelsize=16)
-    ax.tick_params(axis='y', labelsize=16)
+    ax.tick_params(axis="x", rotation=90, labelsize=16)
+    ax.tick_params(axis="y", labelsize=16)
 
 
 def plot_ttest(X: AnnData, ax: Axes):
@@ -468,7 +474,7 @@ def plot_ttest(X: AnnData, ax: Axes):
     # Get all cytokines directly without separate function
     all_cytokines = X.obs["cyt"].unique()
 
-    #Get highly weighted cytokines per component
+    # Get highly weighted cytokines per component
     results_df = highly_weighted_cytokines(X)
 
     # Create pivot table for all components
@@ -507,6 +513,7 @@ def plot_ttest(X: AnnData, ax: Axes):
     ax.set_xlabel("Component")
     ax.set_ylabel("Cytokine")
 
+
 def plot_comp_weights(
     data: AnnData,
     ax: Axes,
@@ -514,69 +521,76 @@ def plot_comp_weights(
     cond="Condition",
     sort_bars=True,
     top_n=3,
-    include_lowest=True
+    include_lowest=True,
 ):
     """Plots component weights for each condition as a bar chart"""
-    
+
     # Get condition names and factor matrix
-    yt = pd.Series(np.unique(data.obs[cond]))
+    cond_df = (
+        data.obs[[cond, "condition_unique_idxs"]]
+        .drop_duplicates()
+        .sort_values("condition_unique_idxs")
+    )
+    yt = cond_df[cond].to_numpy()
     X = np.array(data.uns["Pf2_A"])
-    
-    # Extract weights for the specified component (comp is 1-indexed)
-    component_weights = X[:, comp - 1]
-    
+    cond_mapping = data.obs.groupby("condition_unique_idxs", sort=True)[cond].first()
+
+    # Extract condition names and indices
+    condition_indices = cond_mapping.index.to_numpy()
+    yt = cond_mapping.values
+
+    # Extract weights
+    component_weights = X[condition_indices, comp - 1]
     # Create DataFrame for plotting
-    df = pd.DataFrame({
-        'Condition': yt,
-        'Weight': component_weights
-    })
-    
+    df = pd.DataFrame({"Condition": yt, "Weight": component_weights})
+
     # Get top N highest weighted conditions
-    top_n_highest = df.nlargest(top_n, 'Weight')
-    
+    top_n_highest = df.nlargest(top_n, "Weight")
+
     # Conditionally get lowest weighted conditions
     if include_lowest:
-        top_n_lowest = df.nsmallest(top_n, 'Weight')
+        top_n_lowest = df.nsmallest(top_n, "Weight")
         # Combine and keep only top conditions
         df_filtered = pd.concat([top_n_highest, top_n_lowest]).drop_duplicates()
     else:
         df_filtered = top_n_highest
-    
+
     # Sort by weight if requested
     if sort_bars:
-        df_filtered = df_filtered.sort_values('Weight', ascending=False)
-    
+        df_filtered = df_filtered.sort_values("Weight", ascending=False)
+
     # Create color mapping - highest in red, lowest in blue (if included)
     colors = []
-    for condition in df_filtered['Condition']:
-        if condition in top_n_highest['Condition'].values:
-            colors.append('darkred')  # Highest weights
+    for condition in df_filtered["Condition"]:
+        if condition in top_n_highest["Condition"].values:
+            colors.append("darkred")  # Highest weights
         else:
-            colors.append('darkblue')  # Lowest weights
-    
+            colors.append("darkblue")  # Lowest weights
+
     # Create bar plot with custom colors
-    bars = ax.bar(df_filtered['Condition'], df_filtered['Weight'], color=colors)
-    
+    bars = ax.bar(df_filtered["Condition"], df_filtered["Weight"], color=colors)
+
     # Customize the plot title based on whether lowest are included
     if include_lowest:
-        title = f'Component {comp} Weights by Condition (Top {top_n} Highest/Lowest)'
+        title = f"Component {comp} Weights by Condition (Top {top_n} Highest/Lowest)"
     else:
-        title = f'Component {comp} Weights by Condition (Top {top_n} Highest)'
-    
+        title = f"Component {comp} Weights by Condition (Top {top_n} Highest)"
+
     ax.set_title(title, fontsize=20)
-    ax.set_xlabel('Condition', fontsize=18)
-    ax.set_ylabel('Weight', fontsize=18)
-    ax.tick_params(axis='x', rotation=90, labelsize=18)
-    ax.tick_params(axis='y', labelsize=18)
-    
+    ax.set_xlabel("Condition", fontsize=18)
+    ax.set_ylabel("Weight", fontsize=18)
+    ax.tick_params(axis="x", rotation=90, labelsize=18)
+    ax.tick_params(axis="y", labelsize=18)
+
     # Add legend for color coding (only if lowest are included)
     if include_lowest:
         from matplotlib.patches import Patch
+
         legend_elements = [
-            Patch(facecolor='darkred', label=f'Top {top_n} Highest'),
-            Patch(facecolor='darkblue', label=f'Top {top_n} Lowest')
+            Patch(facecolor="darkred", label=f"Top {top_n} Highest"),
+            Patch(facecolor="darkblue", label=f"Top {top_n} Lowest"),
         ]
-        ax.legend(handles=legend_elements, loc='upper right')
-    
+        ax.legend(handles=legend_elements, loc="upper right")
+
     # Add horizontal line at y=0 for reference
-    ax.axhline(y=0, color='gray', linestyle='-', alpha=0.3)
+    ax.axhline(y=0, color="gray", linestyle="-", alpha=0.3)

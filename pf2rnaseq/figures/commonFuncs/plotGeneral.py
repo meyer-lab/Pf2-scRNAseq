@@ -6,7 +6,7 @@ import scipy.sparse
 import seaborn as sns
 from matplotlib.axes import Axes
 
-from ...factorization import fms_percent_drop, pf2_pca_r2x, fms_diff_ranks
+from ...factorization import fms_diff_ranks, fms_percent_drop, pf2_pca_r2x
 
 
 def plot_r2x(data, rank_vec, ax: Axes):
@@ -35,11 +35,19 @@ def plot_r2x(data, rank_vec, ax: Axes):
     # Increase font sizes
     ax.set_xlabel("Number of Components", fontsize=18)
     ax.set_ylabel("Variance Explained", fontsize=18)
-    ax.tick_params(axis='both', which='major', labelsize=16)
+    ax.tick_params(axis="both", which="major", labelsize=16)
     ax.legend()
 
 
-def plot_avegene_per_celltype(adata, genes, ax, cellType="Cell Type", condition="cytokine", mean=False, center_data=False):
+def plot_avegene_per_celltype(
+    adata,
+    genes,
+    ax,
+    cellType="Cell Type",
+    condition="cytokine",
+    mean=False,
+    center_data=False,
+):
     """Plots average gene expression across cell types for all conditions"""
     genesV = adata[:, genes]
     dataDF = genesV.to_df()
@@ -50,60 +58,77 @@ def plot_avegene_per_celltype(adata, genes, ax, cellType="Cell Type", condition=
         dataDF = dataDF / gene_std
     dataDF["Condition"] = genesV.obs[condition].values
     dataDF["Cell Type"] = genesV.obs[cellType].values
-    
-    # Melt the data 
+
+    # Melt the data
     data = pd.melt(dataDF, id_vars=["Condition", "Cell Type"], value_vars=genes).rename(
         columns={"variable": "Gene", "value": "Gene Expression"}
     )
-    
+
     # Apply grouping if mean=True
     if mean is True:
-        data = data.groupby(["Condition", "Cell Type", "Gene"], observed=False).mean().reset_index()
-    
+        data = (
+            data.groupby(["Condition", "Cell Type", "Gene"], observed=False)
+            .mean()
+            .reset_index()
+        )
+
     sns.boxplot(
         data=data,
         x="Cell Type",
         y="Gene Expression",
-        hue="Cell Type",
+        hue="Condition",
         ax=ax,
         fliersize=0,
     )
     ax.set_title(genes, fontsize=25)
     ax.set_xlabel("Cell Type", fontsize=22)
     ax.set_ylabel("Gene Expression", fontsize=22)
-    ax.tick_params(axis='x', rotation=45, labelsize=20)
-    ax.tick_params(axis='y', labelsize=20)
+    ax.tick_params(axis="x", rotation=45, labelsize=20)
+    ax.tick_params(axis="y", labelsize=20)
 
 
 def plot_avegene_per_category(
-    conds, gene, adata, ax, mean=True, cellType="Cell Type", swarm=False, center_data=False, condition="cytokine"):
-    """Plots average gene expression across cell types for a category of drugs"""
+    conds,
+    gene,
+    adata,
+    ax,
+    mean=True,
+    cellType="Cell Type",
+    swarm=False,
+    center_data=False,
+    condition="cytokine",
+):
+    """Plots average gene expression across cell types for a specified condition"""
     genesV = adata[:, gene]
     dataDF = genesV.to_df()
-    
-    
+
     if center_data:
-        dataDF = (dataDF - genesV.var["means"].values)
+        gene_means = dataDF.mean(axis=0)
+        dataDF = dataDF - gene_means
         gene_std = dataDF.std(axis=0)  # Standard deviation for each gene
         # Z-score: data is already mean-centered, just divide by std
         dataDF = dataDF / gene_std
-    
+
     dataDF["Condition"] = genesV.obs[condition].values
     dataDF["Cell Type"] = genesV.obs[cellType].values
 
-    df = pd.melt(dataDF, id_vars=["Condition", "Cell Type"], value_vars=gene).rename(
+    df = pd.melt(dataDF, id_vars=["Condition", "Cell Type"], value_vars=[gene]).rename(
         columns={"variable": "Gene", "value": "Gene Expression"}
     )
-    
+
     if mean is True:
-        df = df.groupby(["Condition", "Cell Type", "Gene"], observed=False).mean().reset_index()
-    
+        df = (
+            df.groupby(["Condition", "Cell Type", "Gene"], observed=False)
+            .mean()
+            .reset_index()
+        )
+
     df["Condition"] = np.where(df["Condition"].isin(conds), df["Condition"], "Other")
 
     if swarm is False:
         sns.boxplot(
             data=df,
-            x="Condition",
+            x="Cell Type",
             y="Gene Expression",
             hue="Condition",
             ax=ax,
@@ -116,13 +141,11 @@ def plot_avegene_per_category(
             y="Gene Expression",
             hue="Condition",
             ax=ax,
-            alpha=0.6
+            alpha=0.6,
         )
 
     ax.set(title=gene)
-    ax.tick_params(axis='x', rotation=45)
-
-  
+    ax.tick_params(axis="x", rotation=45)
 
 
 def heatmapGeneFactors(
@@ -347,7 +370,7 @@ def cell_count_perc_df(X, celltype="Cell Type", condition="cytokine"):
         condition,
         "condition_unique_idxs",
     ]
-    grouping = [celltype, "cytokine"]
+    grouping = [celltype, condition]
 
     df = X.obs[grouping_all].reset_index(drop=True)
 
@@ -371,12 +394,10 @@ def cell_count_perc_df(X, celltype="Cell Type", condition="cytokine"):
             / dfCond.loc[dfCond[condition] == cond]["Cell Count"].to_numpy()
         )
 
- 
     dfCellType["condition_unique_idxs"] = dfCellType[condition].map(idx_mapping)
     dfCellType.rename(columns={celltype: "Cell Type"}, inplace=True)
 
     return dfCellType
-
 
 
 def plot_gene_set_expression(adata, gene_set, ax: Axes):
