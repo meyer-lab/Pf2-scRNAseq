@@ -112,7 +112,7 @@ def plot_avegene_per_category(
     dataDF["Condition"] = genesV.obs[condition].values
     dataDF["Cell Type"] = genesV.obs[cellType].values
 
-    df = pd.melt(dataDF, id_vars=["Condition", "Cell Type"], value_vars=[gene]).rename(
+    df = pd.melt(dataDF, id_vars=["Condition", "Cell Type"], value_vars=gene).rename(
         columns={"variable": "Gene", "value": "Gene Expression"}
     )
 
