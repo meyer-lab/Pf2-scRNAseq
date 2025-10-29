@@ -584,7 +584,6 @@ def plot_comp_weights(
 
     # Add legend for color coding (only if lowest are included)
     if include_lowest:
-        from matplotlib.patches import Patch
 
         legend_elements = [
             Patch(facecolor="darkred", label=f"Top {top_n} Highest"),
