@@ -4,6 +4,9 @@ import anndata
 import pandas as pd
 import scanpy as sc
 from parafac2.normalize import prepare_dataset
+from pathlib import Path
+
+path_here = Path(__file__).parent.parent
 
 
 def import_citeseq() -> anndata.AnnData:
@@ -89,8 +92,9 @@ def import_Parse(geneThreshold=0.1, doublet=False) -> anndata.AnnData:
     X = anndata.read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Parse_Donor11.h5ad")
     if doublet:
         doubletDF = pd.read_csv(
-            "/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/DN11Doublets.csv", index_col=0
-        )
+        path_here / "pf2rnaseq/Data/DN11Doublets.csv.gz",
+        index_col=0  
+    )
         X.obs = X.obs.join(doubletDF.reindex(X.obs.index))
         singlet_mask = X.obs["doublet"] == 0
         X = X[singlet_mask, :].copy()
