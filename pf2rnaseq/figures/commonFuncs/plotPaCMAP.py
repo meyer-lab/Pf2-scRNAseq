@@ -86,8 +86,7 @@ def plot_wp_pacmap(X: anndata.AnnData, cmp: int, ax: Axes, cbarMax: float = 1.0)
     projections for a component and eigenstate"""
     values = X.obsm["weighted_projections"][:, cmp - 1]
     points = X.obsm["X_pf2_PaCMAP"]
-
-    cmap = sns.diverging_palette(250, 30, l=65, center="dark", as_cmap=True)
+    cmap = sns.diverging_palette(240, 10, as_cmap=True)
 
     canvas = _get_canvas(points)
     data = pd.DataFrame(points, columns=("x", "y"))
@@ -101,15 +100,17 @@ def plot_wp_pacmap(X: anndata.AnnData, cmp: int, ax: Axes, cbarMax: float = 1.0)
         cmap=cmap,
         span=(-cbarMax, cbarMax),
         how="linear",
-        alpha=255,
-        min_alpha=255,
+        alpha=220,
+        min_alpha=220,
     )
 
     ds_show(result, ax)
 
     psm = plt.pcolormesh([[-cbarMax, cbarMax], [-cbarMax, cbarMax]], cmap=cmap)
-    plt.colorbar(psm, ax=ax)
-    ax.set(title="Cmp. " + str(cmp))
+
+    cbar = plt.colorbar(psm, ax=ax)
+
+    ax.set_title("Cmp. " + str(cmp))
     ax = assign_labels(ax)
 
 
@@ -118,14 +119,14 @@ def plot_labels_pacmap(
     labelType: str,
     ax: Axes,
     condition=None,
-    cmap="tab20",
+    cmap: str = "tab20",
     color_key=None,
 ):
     """Scatterplot of UMAP visualization weighted by condition or cell type"""
     labels = X.obs[labelType]
 
     if condition is not None:
-        labels = pd.Series([c if c in condition else "Z Other" for c in labels])
+        labels = pd.Series([c if c in condition else "Other" for c in labels])
     if labels.dtype == "category":
         labels = labels.cat.set_categories(
             np.sort(labels.cat.categories.values), ordered=True
@@ -156,7 +157,10 @@ def plot_labels_pacmap(
     )
 
     ds_show(result, ax)
-    ax.legend(handles=legend_elements)
+
+    ax.legend(
+        handles=legend_elements, fontsize=25, bbox_to_anchor=(1.05, 1), loc="upper left"
+    )
     ax = assign_labels(ax)
 
 
@@ -180,7 +184,7 @@ def plot_wp_per_celltype(
     ax.set(
         xticks=np.linspace(-maxvalue, maxvalue, num=5), xlabel="Cell Specific Weight"
     )
-    ax.set_title(cmpName)
+    ax.set_title(cmpName, fontsize=15)
 
 
 def assign_labels(ax):
