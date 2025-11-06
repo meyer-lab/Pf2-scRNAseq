@@ -205,7 +205,6 @@ def deconvolution_cytokine(
     alpha: float = 0.1,
     max_iter: int = 5000,
     random_state: int = 1,
-    beta: float = 0.05,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Decompose cytokine factor matrix:  A ≈ W @ H
