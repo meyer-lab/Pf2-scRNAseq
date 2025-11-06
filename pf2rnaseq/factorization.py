@@ -294,7 +294,6 @@ def deconvolution_cytokine(
         # 1. Reconstruction term: ∂/∂H [||A - WH||²] = 2(W^T @ error),  L1 penalty: ∂/∂H [α||H||₁] = α * sign(H)
         grad_H = 2 * (W.T @ (W @ H - A)) + alpha
 
-
         return np.concatenate([grad_W.ravel(), grad_H.ravel()])
 
     # Enforce non-negativity
