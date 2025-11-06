@@ -31,7 +31,7 @@ def plot_condition_factors(
         X -= np.median(X, axis=0)
         X /= np.std(X, axis=0)
         ind = reorder_table(X)
-    if not centering:
+    else:
         ind = np.arange(len(X))
     X = X[ind]
     yt = yt.iloc[ind]
