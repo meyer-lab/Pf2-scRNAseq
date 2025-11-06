@@ -41,7 +41,6 @@ def makeFigure():
     # Get cytokine names in correct order
     samples_df = samples_only(X)
 
-   
     # Create deconvolved version for plotting
     X_deconv = X.copy()
     X_deconv.uns["Pf2_A"] = H  # Use primary effects only
