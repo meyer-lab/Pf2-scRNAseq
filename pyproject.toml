@@ -23,7 +23,7 @@ dependencies = [
     "leidenalg>=0.10.1",
     "tqdm>=4.66.1",
     "tlviz>=0.1.1",
-    "statsmodels>=0.14.1",
+    "statsmodels>=0.14.4",
     "dask[dataframe]>=2025",
     "ipykernel>=6.29.5",
     "parafac2 @ git+https://github.com/meyer-lab/parafac2.git",
