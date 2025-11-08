@@ -8,8 +8,8 @@ readme = "README.md"
 requires-python = ">= 3.12"
 
 dependencies = [
-    "numpy>=2.1",
-    "scipy>=1.15",
+    "numpy>=2.2",
+    "scipy>=1.16",
     "scikit-learn>=1.6",
     "seaborn>=0.13.2",
     "pandas>=2.2",
@@ -19,7 +19,7 @@ dependencies = [
     "datashader>=0.18",
     "gseapy>=1.1",
     "scanpy @ git+https://github.com/scverse/scanpy.git@c2a7a4b7ec3203121a8d75aa05fbeb602ceecbd4",
-    "pacmap>=0.7.1",
+    "pacmap>=0.8",
     "leidenalg>=0.10.1",
     "tqdm>=4.66.1",
     "tlviz>=0.1.1",
