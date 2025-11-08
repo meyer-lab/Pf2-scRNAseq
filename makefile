@@ -7,19 +7,19 @@ all: $(allOutput)
 
 output/figure%.svg: pf2scrnaseq/figures/figure%.py
 	@ mkdir -p ./output
-	rye run fbuild $*
+	uv run fbuild $*
 
 test: .venv
-	rye run pytest -s -v -x
+	uv run pytest -s -v -x
 
 .venv:
-	rye sync
+	uv sync
 
 coverage.xml: .venv
-	rye run pytest --junitxml=junit.xml --cov=pf2scrnaseq --cov-report xml:coverage.xml
+	uv run pytest --junitxml=junit.xml --cov=pf2scrnaseq --cov-report xml:coverage.xml
 
 pyright: .venv
-	rye run pyright pf2scrnaseq
+	uv run pyright pf2scrnaseq
 
 clean:
 	rm -rf output profile profile.svg

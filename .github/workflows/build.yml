@@ -8,11 +8,8 @@ jobs:
     runs-on: self-hosted
     steps:
     - uses: actions/checkout@v4
-    - name: Setup rye
-      uses: eifinger/setup-rye@v4
-      with:
-        enable-cache: true
-        version: '0.39.0'
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v6
     - name: Setup environment
       run: make .venv
     - name: Build figures
