@@ -4,12 +4,12 @@ version = "0.1.0"
 description = "Single cell analysis across conditions using PARAFAC2."
 authors = [{name = "Andrew Ramirez"}, {name = "Aaron Meyer", email = "git@asmlab.org" }]
 license = "MIT"
+readme = "README.md"
 requires-python = ">= 3.12"
 
-
 dependencies = [
-    "numpy>=2.1",
-    "scipy>=1.15",
+    "numpy>=2.2",
+    "scipy>=1.16",
     "scikit-learn>=1.6",
     "seaborn>=0.13.2",
     "pandas>=2.2",
@@ -19,7 +19,7 @@ dependencies = [
     "datashader>=0.18",
     "gseapy>=1.1",
     "scanpy @ git+https://github.com/scverse/scanpy.git@c2a7a4b7ec3203121a8d75aa05fbeb602ceecbd4",
-    "pacmap>=0.7.1",
+    "pacmap>=0.8",
     "leidenalg>=0.10.1",
     "tqdm>=4.66.1",
     "tlviz>=0.1.1",
@@ -31,9 +31,12 @@ dependencies = [
     "doubletdetection>=4.3.0.post1",
 ]
 
-
-
-readme = "README.md"
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=6.0",
+    "pyright>=1.1",
+]
 
 [project.scripts]
 fbuild = "pf2rnaseq.figures.common:genFigure"
@@ -42,15 +45,6 @@ factor = "pf2rnaseq.imports:factorSave"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.rye]
-managed = true
-dev-dependencies = [
-    "pytest>=8.0",
-    "pytest-cov>=6.0",
-    "pyright>=1.1",
-]
-
 
 [tool.hatch.metadata]
 allow-direct-references = true
