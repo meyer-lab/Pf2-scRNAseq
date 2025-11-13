@@ -35,7 +35,7 @@ def makeFigure():
     X = read_h5ad("/home/nicoleb/ParsePf2_100_D11_filt.h5ad")
     X.uns["Pf2_A"] = correct_conditions(X)
 
-    W, H = deconvolution_cytokine(X.uns["Pf2_A"], alpha=9e-5, max_iter=5000)
+    W, H = deconvolution_cytokine(X.uns["Pf2_A"], alpha=1e-1, max_iter=5000)
 
 
     # Get cytokine names in correct order
@@ -51,8 +51,7 @@ def makeFigure():
         samples_df["cytokine"],
         groupConditions=True,
         cond="cytokine",
-        log_scale=False,
-        centering=False
+        log_scale=False
     )
     ax[0].set_title("Deconvolved matrix (H)", fontsize=12, fontweight="bold")
 
@@ -62,8 +61,7 @@ def makeFigure():
         samples_df["cytokine"],
         groupConditions=True,
         cond="cytokine",
-        log_scale=False,
-        centering=False
+        log_scale=False
     )
     ax[1].set_title("Original Effects (A)", fontsize=12, fontweight="bold")
 

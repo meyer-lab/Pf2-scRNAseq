@@ -18,8 +18,7 @@ def plot_condition_factors(
     cond_group_labels: pd.Series | None = None,
     groupConditions=False,
     cond="Condition",
-    log_scale=True,
-    centering=True
+    log_scale=True
 ):
     """Plots Pf2 condition factors"""
     pd.set_option("display.max_rows", None)
@@ -27,12 +26,11 @@ def plot_condition_factors(
     X = np.array(data.uns["Pf2_A"])
     if log_scale:
         X = np.log10(X)
-    if centering:
-        X -= np.median(X, axis=0)
-        X /= np.std(X, axis=0)
-        ind = reorder_table(X)
-    else:
-        ind = np.arange(len(X))
+    
+    X -= np.median(X, axis=0)
+    X /= np.std(X, axis=0)+1e-3
+    ind = reorder_table(X+1e-3)
+
     X = X[ind]
     yt = yt.iloc[ind]
 
