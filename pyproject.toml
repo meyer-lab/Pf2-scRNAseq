@@ -18,7 +18,7 @@ dependencies = [
     "anndata>=0.10.3",
     "datashader>=0.18",
     "gseapy>=1.1",
-    "scanpy @ git+https://github.com/scverse/scanpy.git@c2a7a4b7ec3203121a8d75aa05fbeb602ceecbd4",
+    "scanpy>=1.10",
     "pacmap>=0.8",
     "leidenalg>=0.10.1",
     "tqdm>=4.66.1",
