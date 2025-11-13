@@ -2,7 +2,6 @@
 Weighted projections per component in PaCMAP and boxplot of cell types
 """
 
-
 import numpy as np
 
 from ..factorization import correct_conditions, pf2

@@ -37,7 +37,6 @@ def makeFigure():
 
     W, H = deconvolution_cytokine(X.uns["Pf2_A"], alpha=1e-1, max_iter=5000)
 
-
     # Get cytokine names in correct order
     samples_df = samples_only(X)
 
@@ -51,7 +50,7 @@ def makeFigure():
         samples_df["cytokine"],
         groupConditions=True,
         cond="cytokine",
-        log_scale=False
+        log_scale=False,
     )
     ax[0].set_title("Deconvolved matrix (H)", fontsize=12, fontweight="bold")
 
@@ -61,7 +60,7 @@ def makeFigure():
         samples_df["cytokine"],
         groupConditions=True,
         cond="cytokine",
-        log_scale=False
+        log_scale=False,
     )
     ax[1].set_title("Original Effects (A)", fontsize=12, fontweight="bold")
 
