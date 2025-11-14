@@ -264,7 +264,8 @@ def deconvolution_cytokine(
         mse = np.sum((A - reconstruction) ** 2)
 
         # Regularization: L1 penalty on both W and H
-        l1_W = alpha * np.sum(np.abs(W))
+        # Exclude diagonal of W from L1 penalty
+        l1_W = alpha * np.sum(np.abs(W)) - alpha * np.diag(np.abs(W)).sum()
         l1_H = alpha * np.sum(np.abs(H))
 
         total_loss = mse + l1_W + l1_H
@@ -273,7 +274,7 @@ def deconvolution_cytokine(
         if total_loss < best_loss[0]:
             best_loss[0] = total_loss
 
-        if iteration_counter[0] % 100 == 0:
+        if iteration_counter[0] % 10 == 0:
             print(
                 f"  Iter {iteration_counter[0]}: Loss={total_loss:.4f} "
                 f"(MSE={mse:.4f}, L1_W={l1_W:.4f}, L1_H={l1_H:.4f})"
@@ -287,16 +288,13 @@ def deconvolution_cytokine(
 
         # ===== Gradient w.r.t. W =====
         # 1. Reconstruction term: ∂/∂W [||A - WH||²] = 2(error @ H^T), L1 penalty: ∂/∂W [α||W||₁] = α * sign(W)
-        grad_W = 2 * ((W @ H - A) @ H.T) + alpha
+        grad_W = 2 * ((W @ H - A) @ H.T) + alpha * np.sign(W) - np.diag(alpha * np.sign(np.diag(W)))
 
         # ===== Gradient w.r.t. H =====
         # 1. Reconstruction term: ∂/∂H [||A - WH||²] = 2(W^T @ error),  L1 penalty: ∂/∂H [α||H||₁] = α * sign(H)
-        grad_H = 2 * (W.T @ (W @ H - A)) + alpha
+        grad_H = 2 * (W.T @ (W @ H - A)) + alpha * np.sign(H)
 
         return np.concatenate([grad_W.ravel(), grad_H.ravel()])
-
-    # Enforce non-negativity
-    bounds = [(0, None)] * len(x0)
 
     print("\nStarting optimization...")
 
@@ -304,7 +302,6 @@ def deconvolution_cytokine(
         fun=objective,
         x0=x0,
         method="L-BFGS-B",
-        bounds=bounds,
         jac=gradient,
         options={"maxiter": max_iter, "disp": True},
     )
