@@ -92,9 +92,8 @@ def import_Parse(geneThreshold=0.1, doublet=False) -> anndata.AnnData:
     X = anndata.read_h5ad("/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Parse_Donor11.h5ad")
     if doublet:
         doubletDF = pd.read_csv(
-        path_here / "pf2rnaseq/Data/DN11Doublets.csv.gz",
-        index_col=0  
-    )
+            path_here / "pf2rnaseq/Data/DN11Doublets.csv.gz", index_col=0
+        )
         X.obs = X.obs.join(doubletDF.reindex(X.obs.index))
         singlet_mask = X.obs["doublet"] == 0
         X = X[singlet_mask, :].copy()

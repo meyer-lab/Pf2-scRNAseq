@@ -2,7 +2,6 @@
 exports csv of top 30 and bottom 30 genes per component
 """
 
-
 import numpy as np
 import pandas as pd
 from anndata import read_h5ad

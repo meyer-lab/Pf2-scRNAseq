@@ -28,9 +28,9 @@ def plot_condition_factors(
         X = np.log10(X)
 
     X -= np.median(X, axis=0)
-    X /= np.std(X, axis=0)
+    X /= np.std(X, axis=0) + 1e-3
+    ind = reorder_table(X + 1e-3)
 
-    ind = reorder_table(X)
     X = X[ind]
     yt = yt.iloc[ind]
 
@@ -67,7 +67,7 @@ def plot_condition_factors(
                 )
             )
         # add a little legend
-        ax.legend(handles=legend_elements, bbox_to_anchor=(0, 1.3))
+        # ax.legend(handles=legend_elements, bbox_to_anchor=(0, 1.3))
 
     xticks = np.arange(1, X.shape[1] + 1)
 
@@ -584,7 +584,6 @@ def plot_comp_weights(
 
     # Add legend for color coding (only if lowest are included)
     if include_lowest:
-
         legend_elements = [
             Patch(facecolor="darkred", label=f"Top {top_n} Highest"),
             Patch(facecolor="darkblue", label=f"Top {top_n} Lowest"),
