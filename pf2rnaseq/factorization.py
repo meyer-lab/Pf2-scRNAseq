@@ -346,3 +346,186 @@ def deconvolution_cytokine(
     print(f"    Non-zeros: {np.sum(np.abs(H) > 1e-3)}/{H.size}")
 
     return W, H
+
+def deconvolution_cytokine_admm(
+    A: np.ndarray,
+    alpha: float = 0.1,
+    rho: float = 1.0,
+    max_iter: int = 5000,
+    tol: float = 1e-4,
+    random_state: int = 1,
+    adaptive_rho: bool = True,
+) -> tuple[np.ndarray, np.ndarray, dict]:
+    """
+    Decompose cytokine factor matrix using ADMM:  A ≈ W @ H
+    
+    Parameters
+    ----------
+    A : np.ndarray
+        Input matrix (n_cytokines, n_components)
+    alpha : float
+        L1 regularization strength (applied to both W and H)
+    rho : float
+        ADMM penalty parameter
+    max_iter : int
+        Maximum ADMM iterations
+    tol : float
+        Convergence tolerance
+    random_state : int
+        Random seed
+    adaptive_rho : bool
+        Whether to adaptively adjust rho
+        
+    Returns
+    -------
+    Z_W : np.ndarray
+        Cytokine interaction matrix (n_cytokines, n_cytokines)
+    Z_H : np.ndarray
+        Effect basis matrix (n_cytokines, n_components)
+    history : dict
+        Optimization history
+    """
+    n_cytokines, n_components = A.shape
+    np.random.seed(random_state)
+    
+    # Initialize
+    W = np.eye(n_cytokines)
+    H = A.copy()
+    Z_W = W.copy()
+    Z_H = H.copy()
+    U_W = np.zeros_like(W)
+    U_H = np.zeros_like(H)
+    
+    print("Cytokine deconvolution with ADMM:")
+    print(f"  A shape: {A.shape}")
+    print(f"  Alpha (L1 penalty): {alpha}")
+    print(f"  Rho (ADMM penalty): {rho}")
+    print(f"  Adaptive rho: {adaptive_rho}")
+    
+    # Create mask for off-diagonal elements
+    off_diag_mask = ~np.eye(n_cytokines, dtype=bool)
+    
+    def soft_threshold(X, threshold):
+        return np.sign(X) * np.maximum(np.abs(X) - threshold, 0)
+    
+    def update_W(H, Z_W, U_W, rho):
+        """Update W: solve (H@H^T + rho*I) W^T = (A@H^T + rho(Z_W - U_W))^T"""
+        H_HT = H @ H.T
+        A_HT = A @ H.T
+        lhs = H_HT + rho * np.eye(n_cytokines)
+        rhs = A_HT + rho * (Z_W - U_W)
+        return np.linalg.solve(lhs, rhs.T).T
+    
+    def update_H(W, Z_H, U_H, rho):
+        """Update H: solve (W^T@W + rho*I) H = W^T@A + rho(Z_H - U_H)"""
+        W_TW = W.T @ W
+        W_TA = W.T @ A
+        lhs = W_TW + rho * np.eye(n_cytokines)
+        rhs = W_TA + rho * (Z_H - U_H)
+        return np.linalg.solve(lhs, rhs)
+    
+    def update_Z_W(W, U_W, alpha, rho):
+        """Update Z_W: soft-threshold off-diagonal, preserve diagonal"""
+        X = W + U_W
+        Z_W_new = soft_threshold(X, alpha / rho)
+        # Restore diagonal (no L1 penalty on direct effects)
+        np.fill_diagonal(Z_W_new, np.diag(X))
+        return Z_W_new
+    
+    def update_Z_H(H, U_H, alpha, rho):
+        """Update Z_H: soft-threshold entire matrix"""
+        return soft_threshold(H + U_H, alpha / rho)
+    
+    history = {
+        'objective': [],
+        'primal_residual': [],
+        'dual_residual': [],
+        'rho': [],
+        'w_sparsity': [],
+        'h_sparsity': []
+    }
+    
+    print("\nStarting ADMM iterations...")
+    
+    for iteration in range(max_iter):
+        # Store old Z values for dual residual computation
+        Z_W_old = Z_W.copy()
+        Z_H_old = Z_H.copy()
+        
+        # ADMM updates
+        W = update_W(H, Z_W, U_W, rho)
+        H = update_H(W, Z_H, U_H, rho)
+        Z_W = update_Z_W(W, U_W, alpha, rho)
+        Z_H = update_Z_H(H, U_H, alpha, rho)
+        U_W = U_W + (W - Z_W)
+        U_H = U_H + (H - Z_H)
+        
+        # Compute residuals
+        r_norm = np.sqrt(np.sum((W - Z_W)**2) + np.sum((H - Z_H)**2))
+        s_norm = rho * np.sqrt(np.sum((Z_W - Z_W_old)**2) + 
+                       np.sum((Z_H - Z_H_old)**2))
+        
+        # Compute objective (off-diagonal penalty for W, full penalty for H)
+        recon_error = np.sum((A - W @ H) ** 2)
+        l1_W = alpha * np.sum(np.abs(Z_W[off_diag_mask]))
+        l1_H = alpha * np.sum(np.abs(Z_H))
+        objective = recon_error + l1_W + l1_H
+        
+        # Track sparsity
+        w_sparsity = np.sum(np.abs(Z_W[off_diag_mask]) < 1e-3) / np.sum(off_diag_mask)
+        h_sparsity = np.sum(np.abs(Z_H) < 1e-3) / Z_H.size
+        
+        # Store history
+        history['objective'].append(objective)
+        history['primal_residual'].append(r_norm)
+        history['dual_residual'].append(s_norm)
+        history['rho'].append(rho)
+        history['w_sparsity'].append(w_sparsity)
+        history['h_sparsity'].append(h_sparsity)
+        
+        # Print progress
+        if iteration % 10 == 0 or iteration < 10:
+            print(f"  Iter {iteration:4d}: Obj={objective:.4e}, "
+                  f"||r||={r_norm:.4e}, ||s||={s_norm:.4e}, "
+                  f"W_sparse={w_sparsity:.2%}, H_sparse={h_sparsity:.2%}")
+        
+        # Adaptive rho update
+        if adaptive_rho and iteration > 0:
+            if r_norm > 10 * s_norm:
+                rho = rho * 2
+                U_W = U_W / 2
+                U_H = U_H / 2
+            elif s_norm > 10 * r_norm:
+                rho = rho / 2
+                U_W = U_W * 2
+                U_H = U_H * 2
+        
+        # Check convergence
+        eps_primal = tol * np.sqrt(W.size + H.size)
+        eps_dual = tol * np.sqrt(U_W.size + U_H.size)
+        
+        if r_norm < eps_primal and s_norm < eps_dual:
+            print(f"\nConverged at iteration {iteration}")
+            break
+    
+    # Final statistics
+    A_recon = W @ H
+    rel_error = np.linalg.norm(A - A_recon, "fro") / np.linalg.norm(A, "fro")
+    
+    w_sparsity = np.sum(np.abs(Z_W[off_diag_mask]) < 1e-3) / np.sum(off_diag_mask)
+    h_sparsity = np.sum(np.abs(Z_H) < 1e-3) / Z_H.size
+    
+    print("\nOptimization complete:")
+    print(f"  Iterations: {iteration + 1}/{max_iter}")
+    print(f"  Relative reconstruction error: {rel_error:.4%}")
+    print(f"\n  W (cytokine interactions):")
+    print(f"    Off-diagonal sparsity: {w_sparsity:.2%}")
+    print(f"    Off-diagonal non-zeros: {np.sum(np.abs(Z_W[off_diag_mask]) > 1e-3)}")
+    print(f"    Mean |W_offdiag|: {np.abs(Z_W[off_diag_mask]).mean():.4f}")
+    print(f"    Diagonal mean: {np.abs(np.diag(Z_W)).mean():.4f}")
+    print(f"\n  H (effect patterns):")
+    print(f"    Sparsity: {h_sparsity:.2%}")
+    print(f"    Non-zeros: {np.sum(np.abs(Z_H) > 1e-3)}/{Z_H.size}")
+    print(f"    Mean |H|: {np.abs(Z_H).mean():.4f}")
+    
+    return Z_W, Z_H, history
