@@ -400,8 +400,9 @@ def deconvolution_cytokine_admm(
     np.random.seed(random_state)
 
     # Initialize
-    W = np.eye(n_cytokines)
-    H = A.copy()
+    # W initialized as identity, H is original A
+    W = np.random.rand(n_cytokines, n_cytokines) * 0.1 + np.eye(n_cytokines)
+    H = np.random.rand(n_cytokines, n_components) * np.mean(np.abs(A))
     Z_W = W.copy()
     Z_H = H.copy()
     U_W = np.zeros_like(W)

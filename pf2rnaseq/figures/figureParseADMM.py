@@ -60,7 +60,7 @@ def makeFigure():
     )
     ax[0].set_title("Deconvolved matrix (H)", fontsize=12, fontweight="bold")
 
-    #Plot original median subtracted factor matrix for reference
+    # Plot original median subtracted factor matrix for reference
     plot_condition_factors(
         X,
         ax[1],
