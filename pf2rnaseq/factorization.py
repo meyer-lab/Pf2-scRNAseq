@@ -358,10 +358,10 @@ def deconvolution_cytokine_admm(
     alpha_w: float = 0.01,
     rho: float = 1.0,
     max_iter: int = 10000,
-    tol: float = 1e-4,  
+    tol: float = 1e-4,
     random_state: int = 1,
     adaptive_rho: bool = True,
-    non_negative_w: bool = True,  
+    non_negative_w: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, dict]:
     """
     Decompose cytokine factor matrix using ADMM: A ≈ W @ H
@@ -427,11 +427,11 @@ def deconvolution_cytokine_admm(
         rhs = A_HT + rho * (Z_W - U_W)
 
         W_new = np.linalg.solve(lhs, rhs.T).T
-        
+
         # Non-negativity constraint for W
         if non_negative_w:
             W_new = np.maximum(W_new, 0)
-        
+
         # Diagonal constraint
         np.fill_diagonal(W_new, 1.0)
 
@@ -443,24 +443,24 @@ def deconvolution_cytokine_admm(
         W_TA = W.T @ A
         lhs = W_TW + rho * np.eye(n_cytokines)
         rhs = W_TA + rho * (Z_H - U_H)
-        
+
         return np.linalg.solve(lhs, rhs)
 
     def update_Z_W(W, U_W, alpha, rho):
         """Update Z_W: soft-threshold off-diagonal, optional non-negativity"""
         X = W + U_W
         Z_W_new = X.copy()
-        
+
         # Soft-threshold off-diagonal
         Z_W_new[off_diag_mask] = soft_threshold(X[off_diag_mask], alpha / rho)
-        
+
         # Non-negativity constraint for W
         if non_negative_w:
             Z_W_new = np.maximum(Z_W_new, 0)
-        
+
         # Diagonal constraint
         np.fill_diagonal(Z_W_new, 1.0)
-        
+
         return Z_W_new
 
     def update_Z_H(H, U_H, alpha, rho):
@@ -554,7 +554,7 @@ def deconvolution_cytokine_admm(
     print("\nOptimization complete:")
     print(f"  Iterations: {iteration + 1}/{max_iter}")
     print(f"  Relative reconstruction error: {rel_error:.4%}")
-    
+
     print("\n  W (cytokine interactions):")
     print(f"    Off-diagonal sparsity: {w_sparsity:.2%}")
     print(f"    Off-diagonal non-zeros: {np.sum(np.abs(Z_W[off_diag_mask]) > 1e-3)}")
@@ -562,13 +562,13 @@ def deconvolution_cytokine_admm(
     print(f"    Min value: {W.min():.4f}")  # Check non-negativity
     print(f"    Max value: {W.max():.4f}")
     print(f"    Diagonal: all 1.0 (constrained)")
-    
+
     print("\n  H (effect patterns):")
     print(f"    Sparsity: {h_sparsity:.2%}")
     print(f"    Non-zeros: {np.sum(np.abs(Z_H) > 1e-3)}/{Z_H.size}")
     print(f"    Mean |H|: {np.abs(Z_H).mean():.4f}")
     print(f"    Min value: {H.min():.4f}")  # Can be negative
     print(f"    Max value: {H.max():.4f}")
-    print(f"    Negative values: {np.sum(H < 0)} ({100*np.sum(H < 0)/H.size:.1f}%)")
+    print(f"    Negative values: {np.sum(H < 0)} ({100 * np.sum(H < 0) / H.size:.1f}%)")
 
     return Z_W, Z_H, history
