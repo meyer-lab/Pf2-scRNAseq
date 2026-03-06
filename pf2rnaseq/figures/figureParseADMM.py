@@ -12,6 +12,7 @@ from ..factorization import correct_conditions, deconvolution_cytokine_admm
 from .common import getSetup, subplotLabel
 from .commonFuncs.plotFactors import (
     plot_condition_factors,
+    plot_comp_weights
 )
 
 
@@ -41,7 +42,7 @@ def makeFigure():
     A_centered = A - cytokine_medians
     X.uns["Pf2_A"] = A_centered
 
-    W, H, _ = deconvolution_cytokine_admm(A_centered, alpha_h=0.05, alpha_w=0.05, rho=2)
+    W, H, _ = deconvolution_cytokine_admm(A_centered, alpha_h=0.2, alpha_w=0.01, rho=1.25, non_negative_w=True, adaptive_rho=True)
 
     # Get cytokine names in correct order
     samples_df = samples_only(X)
@@ -60,7 +61,9 @@ def makeFigure():
     )
     ax[0].set_title("Deconvolved matrix (H)", fontsize=12, fontweight="bold")
 
-    # Plot original median subtracted factor matrix for reference
+
+
+    # # Plot original median subtracted factor matrix for reference
     plot_condition_factors(
         X,
         ax[1],
@@ -77,16 +80,17 @@ def makeFigure():
     sns.heatmap(
         W,
         ax=ax[2],
-        cmap="YlOrRd",
+        cmap="RdBu_r",
         robust=False,
+        center=0,
         square=True,
         cbar_kws={"label": "Signaling Strength"},
         xticklabels=cytokine_names,
         yticklabels=cytokine_names,
     )
     ax[2].set_title("Cytokine Signaling (W)", fontsize=12, fontweight="bold")
-    ax[2].set_xlabel("Inducing Cytokine →", fontsize=10)
-    ax[2].set_ylabel("← Induced Cytokine", fontsize=10)
+    ax[2].set_ylabel("Inducing Cytokine", fontsize=10)
+    ax[2].set_xlabel("Induced Cytokine", fontsize=10)
     plt.setp(ax[2].get_xticklabels(), rotation=90, ha="center", fontsize=6)
     plt.setp(ax[2].get_yticklabels(), rotation=0, fontsize=6)
 

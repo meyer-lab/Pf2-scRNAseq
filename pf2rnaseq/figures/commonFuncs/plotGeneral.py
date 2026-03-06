@@ -103,17 +103,14 @@ def plot_avegene_per_category(
     dataDF = genesV.to_df()
 
     if center_data:
-        gene_means = dataDF.mean(axis=0)
-        dataDF = dataDF - gene_means
-        gene_std = dataDF.std(axis=0)  # Standard deviation for each gene
-        # Z-score: data is already mean-centered, just divide by std
-        dataDF = dataDF / gene_std
+        dataDF = dataDF.subtract(genesV.var["means"].values)
+
 
     dataDF["Condition"] = genesV.obs[condition].values
     dataDF["Cell Type"] = genesV.obs[cellType].values
 
     df = pd.melt(dataDF, id_vars=["Condition", "Cell Type"], value_vars=gene).rename(
-        columns={"variable": "Gene", "value": "Gene Expression"}
+        columns={"variable": "Gene", "value": "Average Gene Expression"}
     )
 
     if mean is True:
@@ -129,7 +126,7 @@ def plot_avegene_per_category(
         sns.boxplot(
             data=df,
             x="Cell Type",
-            y="Gene Expression",
+            y="Average Gene Expression",
             hue="Condition",
             ax=ax,
             showfliers=False,
@@ -138,7 +135,7 @@ def plot_avegene_per_category(
         sns.stripplot(
             data=df,
             x="Condition",
-            y="Gene Expression",
+            y="Average Gene Expression",
             hue="Condition",
             ax=ax,
             alpha=0.6,
@@ -524,3 +521,183 @@ def plot_fms_percent_drop(
     df = fms_percent_drop(X, percentList, runs, rank)
     sns.lineplot(data=df, x="Percentage of Data Dropped", y="FMS", ax=ax)
     ax.set_ylim(0, 1)
+
+def plot_fc(
+    adata: anndata.AnnData,
+    gene: str,
+    condition1: str,
+    ax: Axes,
+    condition2: str | None = None,
+):
+    """
+    Plots fold change of a gene between conditions.
+    
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        Annotated data object
+    gene : str
+        Gene name to plot
+    condition1 : str
+        Reference condition (denominator for fold change)
+    ax : Axes
+        Matplotlib axes object
+    condition2 : str | None
+        Target condition (numerator). If None, plots all conditions vs condition1
+    """
+    genesV = adata[:, gene]
+    dataDF = genesV.to_df()
+    dataDF["Condition"] = genesV.obs["cytokine"].values
+    
+    # Calculate mean expression for reference condition
+    mean_expr_cond1 = dataDF[dataDF["Condition"] == condition1][gene].mean()
+    
+    if mean_expr_cond1 == 0:
+        ax.text(0.5, 0.5, f"No expression in {condition1}", 
+                ha='center', va='center', transform=ax.transAxes)
+        return
+    
+    if condition2 is not None:
+        # Single comparison mode
+        mean_expr_cond2 = dataDF[dataDF["Condition"] == condition2][gene].mean()
+        fold_change = mean_expr_cond2 / mean_expr_cond1
+        
+        ax.bar([f"{condition2} vs {condition1}"], [fold_change], color='skyblue')
+        ax.axhline(y=1, color='red', linestyle='--', linewidth=1, alpha=0.5)
+        ax.set_ylabel("Fold Change", fontsize=12)
+        ax.set_title(f"Fold Change of {gene}", fontsize=14, fontweight='bold')
+    else:
+        # Compare all conditions to condition1
+        conditions = dataDF["Condition"].unique()
+        conditions = [c for c in conditions if c != condition1]
+        
+        fold_changes = []
+        labels = []
+        
+        for cond in conditions:
+            mean_expr = dataDF[dataDF["Condition"] == cond][gene].mean()
+            fc = np.log2(mean_expr / mean_expr_cond1)
+            fold_changes.append(fc)
+            labels.append(f"{cond}")
+        
+        ax.bar(labels, fold_changes, color='skyblue')
+        
+        ax.set_ylabel("Fold Change", fontsize=12)
+        ax.set_title(f"Fold Change of {gene} (vs {condition1})", 
+                     fontsize=14, fontweight='bold')
+        ax.tick_params(axis='x', rotation=90)
+        ax.legend()
+
+    
+def plot_fc_heatmap(
+    adata: anndata.AnnData,
+    gene: str,
+    condition1: str,
+    ax: Axes,
+    cellType: str = "Cell Type",
+    condition: str = "cytokine",
+    log2: bool = True,
+):
+    """
+    Plots heatmap of fold change of a gene across cell types and conditions.
+    
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        Annotated data object
+    gene : str
+        Gene name to plot
+    condition1 : str
+        Reference condition (denominator for fold change)
+    ax : Axes
+        Matplotlib axes object
+    cellType : str
+        Column name for cell type annotation
+    condition : str
+        Column name for condition annotation
+    log2 : bool
+        If True, plots log2 fold change. If False, plots raw fold change
+    """
+    genesV = adata[:, gene]
+    dataDF = genesV.to_df()
+    dataDF["Condition"] = genesV.obs[condition].values
+    dataDF["Cell Type"] = genesV.obs[cellType].values
+    
+    # Calculate mean expression for each cell type in each condition
+    mean_expr = dataDF.groupby(["Condition", "Cell Type"], observed=False)[gene].mean().reset_index()
+    
+    # Get reference expression for each cell type in condition1
+    ref_expr = mean_expr[mean_expr["Condition"] == condition1].set_index("Cell Type")[gene]
+    
+    # Calculate fold change for each cell type across conditions
+    fc_data = []
+    conditions = mean_expr["Condition"].unique()
+    conditions = [c for c in conditions if c != condition1]
+    cell_types = mean_expr["Cell Type"].unique()
+    
+    for cell_type in cell_types:
+        fc_row = {"Cell Type": cell_type}
+        
+        # Get reference expression for this cell type
+        ref_val = ref_expr.get(cell_type, np.nan)
+        
+        for cond in conditions:
+            cond_expr = mean_expr[(mean_expr["Condition"] == cond) & 
+                                  (mean_expr["Cell Type"] == cell_type)][gene].values
+            
+            # Check if cell type exists in this condition
+            if len(cond_expr) == 0:
+                fc_row[cond] = np.nan
+            # Check if reference or current expression is zero
+            elif np.isnan(ref_val) or ref_val == 0 or cond_expr[0] == 0:
+                fc_row[cond] = np.nan
+            else:
+                # Normal calculation
+                fc = cond_expr[0] / ref_val
+                if log2:
+                    fc = np.log2(fc) if fc > 0 else np.nan
+                fc_row[cond] = fc
+        
+        fc_data.append(fc_row)
+    
+    # Create DataFrame for heatmap
+    fc_df = pd.DataFrame(fc_data).set_index("Cell Type")
+    
+    # Plot heatmap
+    if log2:
+        cmap = sns.diverging_palette(240, 10, as_cmap=True)
+        center = 0
+        vmax = np.nanmax(np.abs(fc_df.values))
+        vmin = -vmax
+        cbar_label = "Log2 Fold Change"
+    else:
+        cmap = "YlOrRd"
+        center = 1
+        vmin = None
+        vmax = None
+        cbar_label = "Fold Change"
+    
+    sns.heatmap(
+        fc_df,
+        ax=ax,
+        cmap=cmap,
+        center=center,
+        vmin=vmin,
+        vmax=vmax,
+    
+        fmt=".2f",
+     
+        cbar_kws={"label": cbar_label},
+        linewidths=0.5,
+        linecolor='gray',
+        square=True,
+        mask=fc_df.isna(),  # Mask NaN values to show as blank
+    )
+    
+    ax.set_title(f"{gene} (vs {condition1})", fontsize=14, fontweight='bold')
+    ax.set_xlabel("Condition", fontsize=12)
+    ax.set_ylabel("Cell Type", fontsize=12)
+    ax.set_xticks(np.arange(len(fc_df.columns)) + 0.5)
+    ax.set_xticklabels(fc_df.columns, rotation=90, ha='center', fontsize=8)
+    
+    ax.tick_params(axis='y', rotation=0, labelsize=8)

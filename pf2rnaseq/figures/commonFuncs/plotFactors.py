@@ -24,6 +24,7 @@ def plot_condition_factors(
     pd.set_option("display.max_rows", None)
     yt = pd.Series(np.unique(data.obs[cond]))
     X = np.array(data.uns["Pf2_A"])
+
     if log_scale:
         X = np.log10(X)
 
@@ -326,17 +327,20 @@ def plot_gene_factors(
 
 def plot_geneSet_factors(
     data: AnnData, ax: Axes, genes: np.array, trim=True
-):  # yt gene names- input that will
+):  
     """Plots Pf2 gene factors for a set of genes"""
     rank = data.varm["Pf2_C"].shape[1]
     X = np.array(data.varm["Pf2_C"])
     yt = data.var.index.values
 
-    kept_idxs = np.where(np.in1d(yt, genes))
+    kept_idxs = np.where(np.isin(yt, genes))
     X = X[kept_idxs]
     yt = yt[kept_idxs]
+    missing_genes = set(genes) - set(yt)
+    if missing_genes:
+        print(f"Warning: {len(missing_genes)} genes not found: {missing_genes}")
 
-    X = X / np.max(np.abs(X))
+
 
     xticks = np.arange(1, rank + 1)
 
