@@ -43,6 +43,29 @@ def correct_conditions(X: anndata.AnnData):
     return X.uns["Pf2_A"] / counts_correct
 
 
+def filter_components_by_cytokine_quantile(
+    threshold: float,
+    csv_path: str = "/home/nicoleb/Pf2-scRNAseq-1/pf2rnaseq/Data/donor_vs_cytokine_variability_sd.csv",
+) -> np.ndarray:
+    """Return 0-indexed components whose cytokine_quantile is at/above a threshold.
+
+    Parameters
+    ----------
+    threshold : float
+        Minimum cytokine_quantile value a component must have to be kept.
+    csv_path : str
+        Path to the CSV with columns component, donor_sd, cytokine_sd,
+        donor_quantile, cytokine_quantile.
+
+    Returns
+    -------
+    np.ndarray
+        0-indexed component numbers with cytokine_quantile >= threshold.
+    """
+    df = pd.read_csv(csv_path)
+    return df.loc[df["cytokine_quantile"] >= threshold, "component"].to_numpy()
+
+
 def pf2(
     X: anndata.AnnData,
     rank: int,
@@ -356,12 +379,16 @@ def deconvolution_cytokine_admm(
     A: np.ndarray,
     alpha_h: float = 0.1,
     alpha_w: float = 0.01,
-    rho: float = 1.0,
+    rho_w_init: float | None = None,
+    rho_h_init: float | None = None,
     max_iter: int = 10000,
-    tol: float = 1e-4,
+    tol_abs: float = 1e-4,
+    tol_rel: float = 1e-3,
     random_state: int = 1,
     adaptive_rho: bool = True,
+    rho_bounds: tuple[float, float] = (1e-4, 1e4),
     non_negative_w: bool = True,
+    non_negative_h: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, dict]:
     """
     Decompose cytokine factor matrix using ADMM: A ≈ W @ H
@@ -374,18 +401,25 @@ def deconvolution_cytokine_admm(
         L1 regularization for H
     alpha_w : float
         L1 regularization for W (off-diagonal only)
-    rho : float
-        ADMM penalty parameter
+    rho_w_init, rho_h_init : float or None
+        Initial ADMM penalty for the W- and H-subproblems. If None,
+        computed via the spectral rule rho* = sqrt(lambda_min * lambda_max)
+        of the relevant Gram matrix (H H^T for W-step, W^T W for H-step).
     max_iter : int
         Maximum iterations
-    tol : float
-        Convergence tolerance for both primal and dual residuals
+    tol_abs, tol_rel : float
+        Absolute and relative tolerance terms for the combined stopping
+        criterion (Boyd et al. 2011, §3.3.1), applied per-block.
     random_state : int
         Random seed
     adaptive_rho : bool
-        Whether to adaptively adjust rho
+        Whether to adaptively adjust rho_w and rho_h independently
+    rho_bounds : tuple[float, float]
+        (min, max) clip range for adaptive rho updates
     non_negative_w : bool
         If True, enforce W ≥ 0 (cytokines only activate, not inhibit)
+    non_negative_h : bool
+        If True, enforce H ≥ 0
 
     Returns
     -------
@@ -400,83 +434,77 @@ def deconvolution_cytokine_admm(
     np.random.seed(random_state)
 
     # Initialize
-    W = np.eye(n_cytokines)
-    H = A.copy()
+    W = np.random.rand(n_cytokines, n_cytokines) * 0.1 + np.eye(n_cytokines)
+    H = np.random.rand(n_cytokines, n_components) * np.mean(np.abs(A))
     Z_W = W.copy()
     Z_H = H.copy()
     U_W = np.zeros_like(W)
     U_H = np.zeros_like(H)
 
-    print("Cytokine deconvolution with ADMM:")
-    print(f"  A shape: {A.shape}")
-    print(f"  Alpha_W: {alpha_w}, Alpha_H: {alpha_h}")
-    print(f"  Rho: {rho}")
-    print(f"  Tolerance: {tol}")
-    print(f"  Non-negative W: {non_negative_w}")
-
     off_diag_mask = ~np.eye(n_cytokines, dtype=bool)
+    rho_min, rho_max = rho_bounds
 
     def soft_threshold(X, threshold):
         return np.sign(X) * np.maximum(np.abs(X) - threshold, 0)
 
-    def update_W(H, Z_W, U_W, rho):
-        """Update W: constrain diagonal to 1.0, optional non-negativity"""
-        H_HT = H @ H.T
-        A_HT = A @ H.T
-        lhs = H_HT + rho * np.eye(n_cytokines)
-        rhs = A_HT + rho * (Z_W - U_W)
+    def spectral_rho(M):
+        """Geometric mean of the extreme eigenvalues of M @ M.T."""
+        eigs = np.linalg.eigvalsh(M @ M.T)
+        eigs = eigs[eigs > 1e-12]
+        if eigs.size == 0:
+            return 1.0
+        return float(np.sqrt(eigs.min() * eigs.max()))
 
-        W_new = np.linalg.solve(lhs, rhs.T).T
+    # --- Initialize rho_w, rho_h independently ---
+    rho_w = rho_w_init if rho_w_init is not None else spectral_rho(H)
+    rho_h = rho_h_init if rho_h_init is not None else spectral_rho(W)
+    rho_w = np.clip(rho_w, rho_min, rho_max)
+    rho_h = np.clip(rho_h, rho_min, rho_max)
 
-        # Non-negativity constraint for W
-        if non_negative_w:
-            W_new = np.maximum(W_new, 0)
+    def update_W(H, Z_W, U_W, rho_w):
+        lhs = H @ H.T + rho_w * np.eye(n_cytokines)
+        rhs = A @ H.T + rho_w * (Z_W - U_W)
+        return np.linalg.solve(lhs, rhs.T).T
 
-        # Diagonal constraint
-        np.fill_diagonal(W_new, 1.0)
-
-        return W_new
-
-    def update_H(W, Z_H, U_H, rho):
-        """Update H: NO non-negativity constraint"""
+    def update_H(W, Z_H, U_H, rho_h):
         W_TW = W.T @ W
         W_TA = W.T @ A
-        lhs = W_TW + rho * np.eye(n_cytokines)
-        rhs = W_TA + rho * (Z_H - U_H)
-
+        lhs = W_TW + rho_h * np.eye(n_cytokines)
+        rhs = W_TA + rho_h * (Z_H - U_H)
         return np.linalg.solve(lhs, rhs)
 
-    def update_Z_W(W, U_W, alpha, rho):
-        """Update Z_W: soft-threshold off-diagonal, optional non-negativity"""
-        X = W + U_W
-        Z_W_new = X.copy()
-
-        # Soft-threshold off-diagonal
-        Z_W_new[off_diag_mask] = soft_threshold(X[off_diag_mask], alpha / rho)
-
-        # Non-negativity constraint for W
+    def update_Z_W(W, U_W, alpha, rho_w):
+        Z_W_new = soft_threshold(W + U_W, alpha / rho_w)
         if non_negative_w:
-            Z_W_new = np.maximum(Z_W_new, 0)
-
-        # Diagonal constraint
+            np.maximum(Z_W_new, 0, out=Z_W_new)
         np.fill_diagonal(Z_W_new, 1.0)
-
         return Z_W_new
 
-    def update_Z_H(H, U_H, alpha, rho):
-        """Update Z_H: soft-threshold, NO non-negativity"""
-        # H can be negative
-        return soft_threshold(H + U_H, alpha / rho)
+    def update_Z_H(H, U_H, alpha, rho_h):
+        Z_H_new = soft_threshold(H + U_H, alpha / rho_h)
+        if non_negative_h:
+            np.maximum(Z_H_new, 0, out=Z_H_new)
+        return Z_H_new
 
     history = {
         "objective": [],
-        "primal_residual": [],
-        "dual_residual": [],
-        "rho": [],
+        "primal_residual_w": [],
+        "dual_residual_w": [],
+        "primal_residual_h": [],
+        "dual_residual_h": [],
+        "rho_w": [],
+        "rho_h": [],
         "w_sparsity": [],
         "h_sparsity": [],
     }
 
+    print("Cytokine deconvolution with ADMM:")
+    print(f"  A shape: {A.shape}")
+    print(f"  Alpha_W: {alpha_w}, Alpha_H: {alpha_h}")
+    print(f"  Initial rho_w: {rho_w:.4g}, rho_h: {rho_h:.4g}")
+    print(f"  Tolerance (abs, rel): ({tol_abs:.1e}, {tol_rel:.1e})")
+    print(f"  Non-negative W: {non_negative_w}")
+    print(f"  Non-negative H: {non_negative_h}")
     print("\nStarting ADMM iterations...")
 
     for iteration in range(max_iter):
@@ -484,20 +512,28 @@ def deconvolution_cytokine_admm(
         Z_H_old = Z_H.copy()
 
         # ADMM updates
-        W = update_W(H, Z_W, U_W, rho)
-        H = update_H(W, Z_H, U_H, rho)
-        Z_W = update_Z_W(W, U_W, alpha_w, rho)
-        Z_H = update_Z_H(H, U_H, alpha_h, rho)
+        W = update_W(H, Z_W, U_W, rho_w)
+        H = update_H(W, Z_H, U_H, rho_h)
+        Z_W = update_Z_W(W, U_W, alpha_w, rho_w)
+        Z_H = update_Z_H(H, U_H, alpha_h, rho_h)
         U_W = U_W + (W - Z_W)
         U_H = U_H + (H - Z_H)
 
-        # Primal residual: ||W - Z_W||² + ||H - Z_H||²
-        r_norm = np.sqrt(np.sum((W - Z_W) ** 2) + np.sum((H - Z_H) ** 2))
+        # Per-block residuals, normalized by entry count
+        r_w = np.linalg.norm(W - Z_W) / np.sqrt(W.size)
+        s_w = np.linalg.norm(rho_w * (Z_W - Z_W_old)) / np.sqrt(W.size)
+        r_h = np.linalg.norm(H - Z_H) / np.sqrt(H.size)
+        s_h = np.linalg.norm(rho_h * (Z_H - Z_H_old)) / np.sqrt(H.size)
 
-        # Dual residual: ||ρ(Z_W - Z_W_old)||² + ||ρ(Z_H - Z_H_old)||²
-        s_norm = np.sqrt(
-            np.sum((rho * (Z_W - Z_W_old)) ** 2) + np.sum((rho * (Z_H - Z_H_old)) ** 2)
+        # Combined absolute + relative stopping criteria (Boyd et al. 2011, §3.3.1)
+        eps_pri_w = tol_abs + tol_rel * max(
+            np.linalg.norm(W) / np.sqrt(W.size), np.linalg.norm(Z_W) / np.sqrt(W.size)
         )
+        eps_dual_w = tol_abs + tol_rel * np.linalg.norm(rho_w * U_W) / np.sqrt(W.size)
+        eps_pri_h = tol_abs + tol_rel * max(
+            np.linalg.norm(H) / np.sqrt(H.size), np.linalg.norm(Z_H) / np.sqrt(H.size)
+        )
+        eps_dual_h = tol_abs + tol_rel * np.linalg.norm(rho_h * U_H) / np.sqrt(H.size)
 
         # Compute objective
         recon_error = np.sum((A - W @ H) ** 2)
@@ -511,37 +547,52 @@ def deconvolution_cytokine_admm(
 
         # Store history
         history["objective"].append(objective)
-        history["primal_residual"].append(r_norm)
-        history["dual_residual"].append(s_norm)
-        history["rho"].append(rho)
+        history["primal_residual_w"].append(r_w)
+        history["dual_residual_w"].append(s_w)
+        history["primal_residual_h"].append(r_h)
+        history["dual_residual_h"].append(s_h)
+        history["rho_w"].append(rho_w)
+        history["rho_h"].append(rho_h)
         history["w_sparsity"].append(w_sparsity)
         history["h_sparsity"].append(h_sparsity)
 
-        # Print progress
-        if iteration % 10 == 0 or iteration < 10:
+        if iteration % 100 == 0 or iteration < 10:
             print(
                 f"  Iter {iteration:4d}: Obj={objective:.4e}, "
-                f"r={r_norm:.3e}, s={s_norm:.3e}, ρ={rho:.2f}"
+                f"r_w={r_w:.3e}, s_w={s_w:.3e}, ρ_w={rho_w:.3g} | "
+                f"r_h={r_h:.3e}, s_h={s_h:.3e}, ρ_h={rho_h:.3g}"
             )
 
-        # Adaptive rho update
+        # Adaptive rho update — W and H blocks handled independently
         if adaptive_rho and iteration > 0:
-            if r_norm > 10 * s_norm:
-                rho = rho * 2
+            if r_w > 10 * s_w:
+                rho_w = np.clip(rho_w * 2, rho_min, rho_max)
                 U_W = U_W / 2
-                U_H = U_H / 2
-                print(f"    Increased ρ → {rho:.2f}")
-            elif s_norm > 10 * r_norm:
-                rho = rho / 2
+            elif s_w > 10 * r_w:
+                rho_w = np.clip(rho_w / 2, rho_min, rho_max)
                 U_W = U_W * 2
-                U_H = U_H * 2
-                print(f"    Decreased ρ → {rho:.2f}")
 
-        # Simple convergence check
-        if r_norm < tol and s_norm < tol:
+            if r_h > 10 * s_h:
+                rho_h = np.clip(rho_h * 2, rho_min, rho_max)
+                U_H = U_H / 2
+            elif s_h > 10 * r_h:
+                rho_h = np.clip(rho_h / 2, rho_min, rho_max)
+                U_H = U_H * 2
+
+        # Convergence check — both blocks must satisfy their combined criteria
+        if (
+            r_w < eps_pri_w
+            and s_w < eps_dual_w
+            and r_h < eps_pri_h
+            and s_h < eps_dual_h
+        ):
             print(f"\n✓ Converged at iteration {iteration}")
-            print(f"  Primal residual: {r_norm:.4e} < {tol:.4e}")
-            print(f"  Dual residual: {s_norm:.4e} < {tol:.4e}")
+            print(
+                f"  W block: r={r_w:.4e} < {eps_pri_w:.4e}, s={s_w:.4e} < {eps_dual_w:.4e}"
+            )
+            print(
+                f"  H block: r={r_h:.4e} < {eps_pri_h:.4e}, s={s_h:.4e} < {eps_dual_h:.4e}"
+            )
             break
 
     # Final statistics
@@ -554,12 +605,13 @@ def deconvolution_cytokine_admm(
     print("\nOptimization complete:")
     print(f"  Iterations: {iteration + 1}/{max_iter}")
     print(f"  Relative reconstruction error: {rel_error:.4%}")
+    print(f"  Final rho_w: {rho_w:.4g}, rho_h: {rho_h:.4g}")
 
     print("\n  W (cytokine interactions):")
     print(f"    Off-diagonal sparsity: {w_sparsity:.2%}")
     print(f"    Off-diagonal non-zeros: {np.sum(np.abs(Z_W[off_diag_mask]) > 1e-3)}")
     print(f"    Mean |W_offdiag|: {np.abs(Z_W[off_diag_mask]).mean():.4f}")
-    print(f"    Min value: {W.min():.4f}")  # Check non-negativity
+    print(f"    Min value: {W.min():.4f}")
     print(f"    Max value: {W.max():.4f}")
     print(f"    Diagonal: all 1.0 (constrained)")
 
@@ -567,7 +619,7 @@ def deconvolution_cytokine_admm(
     print(f"    Sparsity: {h_sparsity:.2%}")
     print(f"    Non-zeros: {np.sum(np.abs(Z_H) > 1e-3)}/{Z_H.size}")
     print(f"    Mean |H|: {np.abs(Z_H).mean():.4f}")
-    print(f"    Min value: {H.min():.4f}")  # Can be negative
+    print(f"    Min value: {H.min():.4f}")
     print(f"    Max value: {H.max():.4f}")
     print(f"    Negative values: {np.sum(H < 0)} ({100 * np.sum(H < 0) / H.size:.1f}%)")
 
