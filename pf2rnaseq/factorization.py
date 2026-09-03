@@ -620,3 +620,63 @@ def deconvolution_cytokine_admm(
     print(f"    Negative values: {np.sum(H < 0)} ({100 * np.sum(H < 0) / H.size:.1f}%)")
 
     return Z_W, Z_H, history
+
+def correct_conditions_from_npy(
+    A: np.ndarray,
+    cyt_order: np.ndarray,
+    h5ad_path: str = "/opt/data/Parse_10M_PBMC_cytokines.h5ad",
+    cytokine_col: str = "cytokine",
+) -> np.ndarray:
+    """Correct cytokine factor matrix by total read depth per condition.
+
+    Mirrors correct_conditions() but works with a standalone numpy factor matrix
+    and reads the h5ad in backed mode, using the obs cytokine column to group
+    cells without loading X.X into memory.
+
+    Parameters
+    ----------
+    A : np.ndarray
+        Cytokine factor matrix, shape (n_cytokines, n_components).
+        Rows must correspond to cytokines in cyt_order.
+    cyt_order : np.ndarray
+        Cytokine names in the same row order as A.
+    h5ad_path : str
+        Path to the h5ad file opened in backed mode.
+    cytokine_col : str
+        Column in obs that identifies each cell's cytokine condition.
+
+    Returns
+    -------
+    np.ndarray
+        Corrected factor matrix, same shape as A.
+    """
+    import anndata as an
+
+    X = an.read_h5ad(h5ad_path, backed="r")
+    obs = X.obs
+
+    if "total_counts" in obs.columns:
+        per_cell = obs["total_counts"]
+    else:
+        per_cell = pd.Series(np.ones(len(obs), dtype=np.float64), index=obs.index)
+
+    # Sum read counts (or cell counts) per cytokine condition
+    cyt_totals = per_cell.groupby(obs[cytokine_col]).sum()
+    X.file.close()
+
+    # Align to the row order of A using cyt_order
+    counts = cyt_totals.reindex(cyt_order).to_numpy(dtype=np.float64).reshape(-1, 1)
+
+    A = A.copy()
+    min_val = np.min(A)
+    if min_val < 0:
+        A = A + abs(min_val) + 1e-10
+
+    cond_mean = gmean(A, axis=1)
+
+    lr = LinearRegression()
+    lr.fit(counts, cond_mean.reshape(-1, 1))
+    counts_correct = lr.predict(counts)
+
+    return A / counts_correct
+
