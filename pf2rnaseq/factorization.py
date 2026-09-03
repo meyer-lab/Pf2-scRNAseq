@@ -503,6 +503,7 @@ def deconvolution_cytokine_admm(
     print(f"  Non-negative H: {non_negative_h}")
     print("\nStarting ADMM iterations...")
 
+    iteration = -1
     for iteration in range(max_iter):
         Z_W_old = Z_W.copy()
         Z_H_old = Z_H.copy()
