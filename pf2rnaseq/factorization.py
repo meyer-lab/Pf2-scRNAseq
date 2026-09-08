@@ -382,7 +382,6 @@ def deconvolution_cytokine_admm(
     tol_rel: float = 1e-3,
     random_state: int = 1,
     adaptive_rho: bool = True,
-    rho_bounds: tuple[float, float] = (1e-4, 1e4),
     non_negative_w: bool = True,
     non_negative_h: bool = True,
 ) -> tuple[np.ndarray, np.ndarray, dict]:
@@ -410,8 +409,6 @@ def deconvolution_cytokine_admm(
         Random seed
     adaptive_rho : bool
         Whether to adaptively adjust rho_w and rho_h independently
-    rho_bounds : tuple[float, float]
-        (min, max) clip range for adaptive rho updates
     non_negative_w : bool
         If True, enforce W ≥ 0 (cytokines only activate, not inhibit)
     non_negative_h : bool
@@ -438,7 +435,6 @@ def deconvolution_cytokine_admm(
     U_H = np.zeros_like(H)
 
     off_diag_mask = ~np.eye(n_cytokines, dtype=bool)
-    rho_min, rho_max = rho_bounds
 
     def soft_threshold(X, threshold):
         return np.sign(X) * np.maximum(np.abs(X) - threshold, 0)
@@ -454,8 +450,6 @@ def deconvolution_cytokine_admm(
     # --- Initialize rho_w, rho_h independently ---
     rho_w = rho_w_init if rho_w_init is not None else spectral_rho(H)
     rho_h = rho_h_init if rho_h_init is not None else spectral_rho(W)
-    rho_w = np.clip(rho_w, rho_min, rho_max)
-    rho_h = np.clip(rho_h, rho_min, rho_max)
 
     def update_W(H, Z_W, U_W, rho_w):
         lhs = H @ H.T + rho_w * np.eye(n_cytokines)
@@ -563,17 +557,17 @@ def deconvolution_cytokine_admm(
         # Adaptive rho update — W and H blocks handled independently
         if adaptive_rho and iteration > 0:
             if r_w > 10 * s_w:
-                rho_w = np.clip(rho_w * 2, rho_min, rho_max)
+                rho_w = rho_w * 2
                 U_W = U_W / 2
             elif s_w > 10 * r_w:
-                rho_w = np.clip(rho_w / 2, rho_min, rho_max)
+                rho_w = rho_w / 2
                 U_W = U_W * 2
 
             if r_h > 10 * s_h:
-                rho_h = np.clip(rho_h * 2, rho_min, rho_max)
+                rho_h = rho_h * 2
                 U_H = U_H / 2
             elif s_h > 10 * r_h:
-                rho_h = np.clip(rho_h / 2, rho_min, rho_max)
+                rho_h = rho_h / 2
                 U_H = U_H * 2
 
         # Convergence check — both blocks must satisfy their combined criteria
